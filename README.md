@@ -44,7 +44,7 @@ The whole project was created during the Submission Period (Oct 1 – Nov 12, 20
 | Database | PostgreSQL · SQLAlchemy 2 async + asyncpg · Alembic migrations |
 | Payments | PayPal REST API (Orders v2), Sandbox |
 
-Build plan: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) · **All 5 parts complete:** foundation; AI gateway and agent engine; agents and live workflow; PayPal payments and reconciliation; full UI, security and QA.
+**All 5 parts complete:** foundation; AI gateway and agent engine; agents and live workflow; PayPal payments and reconciliation; full UI, security and QA.
 
 ## Try it
 
@@ -117,7 +117,6 @@ frontend/src/
   pages/             Login, Overview, AI Workspace (+ live request page), Vendor Intelligence, Purchase Orders,
                      Approval Center, Payment Center, Intelligence & Audit
 frontend/e2e/        Playwright journey + responsive tests
-docs/                implementation plan
 ```
 
 ## Setup
