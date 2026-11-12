@@ -81,7 +81,7 @@ class ModelExecution(UUIDPk, CreatedAt, Base):
     __table_args__ = (CheckConstraint("latency_ms >= 0", name="latency_nonneg"),)
 
     agent_run_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("agent_runs.id", ondelete="SET NULL"), index=True)
-    provider: Mapped[str] = mapped_column(String(32), nullable=False, index=True)  # anthropic | openai | ollama
+    provider: Mapped[str] = mapped_column(String(32), nullable=False, index=True)  # anthropic | openai
     model: Mapped[str] = mapped_column(String(100), nullable=False)
     purpose: Mapped[str | None] = mapped_column(String(64))
     latency_ms: Mapped[int] = mapped_column(Integer, nullable=False)

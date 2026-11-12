@@ -2,12 +2,12 @@ import { defineConfig, devices } from "@playwright/test";
 
 /**
  * End-to-end: a fresh `paypal_e2e` database (accounts only, empty catalogue), the real backend on
- * :8100 using the local Ollama model and the PayPal sandbox from backend/.env, and the real frontend
- * on :5174. Nothing is mocked; Ollama must be running and the machine needs internet for PayPal.
+ * :8100 using Claude (ANTHROPIC_API_KEY) and the PayPal sandbox from backend/.env, and the real frontend
+ * on :5174. Nothing is mocked; the machine needs internet for Claude and PayPal.
  */
 const backendEnv = [
   "DB_NAME=paypal_e2e",
-  "LLM_PROVIDERS=ollama",
+  "LLM_PROVIDERS=anthropic",
   "PAYPAL_MODE=sandbox",
   "APP_ENV=e2e",
   "LOG_FORMAT=text",

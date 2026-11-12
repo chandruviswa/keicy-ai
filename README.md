@@ -15,11 +15,11 @@ Keicy AI is for **operations and finance teams at SMBs**. A requester types what
 | | What it does |
 |---|---|
 | **PayPal (central)** | PayPal JS SDK v6 button → server-side **Orders v2** create (the amount always comes from the approved PO, never the browser) → **capture** with `PayPal-Request-Id` idempotency → capture verified against the PO (amount and currency) → **webhook** signature verification (`verify-webhook-signature`) → **Reconciliation agent** re-reads the order from PayPal before marking the PO paid. Declines, buyer cancels, timeouts and retries are all handled. |
-| **AI (agentic)** | LLM gateway (Anthropic Claude → OpenAI → local Ollama fallback, with retries and schema repair). It runs the Intent, Research, Evaluation, Procurement, Finance and Reconciliation agents through permissioned, idempotent tools, with live progress over WebSocket. Agents can **never** move money: payment needs a recorded human approval. |
+| **AI (agentic)** | LLM gateway (Anthropic Claude, optionally with OpenAI as a fallback, with retries and schema repair). It runs the Intent, Research, Evaluation, Procurement, Finance and Reconciliation agents through permissioned, idempotent tools, with live progress over WebSocket. Agents can **never** move money: payment needs a recorded human approval. |
 
 ## Quick start for judges
 
-1. Follow **Setup** below. You need Postgres (or `docker compose up -d postgres`), Python 3.12 with `uv`, Node 20+, a free PayPal Sandbox app, and **either** an Anthropic/OpenAI API key **or** a local [Ollama](https://ollama.com) model.
+1. Follow **Setup** below. You need Postgres (or `docker compose up -d postgres`), Python 3.12 with `uv`, Node 20+, a free PayPal Sandbox app, and an Anthropic (Claude) API key.
 2. Sign in with these seeded **local test accounts** (one-click buttons on the login page). All share the password `Keicy-Demo-2026`:
 
    | Role | Email |
@@ -39,7 +39,7 @@ The whole project was created during the Submission Period (Oct 1 – Nov 12, 20
 |---|---|
 | Frontend | React 19 + Vite 7 + TypeScript + Tailwind CSS 4, React Router, Lucide, Recharts (`frontend/`) |
 | Backend | Python 3.12 + FastAPI, API under `/api/v1` (`backend/`) |
-| AI | Cloud LLM (Anthropic / OpenAI) with Ollama fallback |
+| AI | Claude (Anthropic API), optional OpenAI fallback |
 | Orchestration | Custom Python agent engine |
 | Database | PostgreSQL · SQLAlchemy 2 async + asyncpg · Alembic migrations |
 | Payments | PayPal REST API (Orders v2), Sandbox |
@@ -48,7 +48,7 @@ Build plan: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) · **All 
 
 ## Try it
 
-Nothing is mocked: the agents use a real model (Claude, OpenAI or local Ollama) and payments go through the real PayPal REST API (sandbox or live). The app ships with **no catalogue data** — you enter your own vendors, products and offers. Sign-in accounts are the only seeded data.
+Nothing is mocked: the agents use a real model (Claude, or OpenAI if configured) and payments go through the real PayPal REST API (sandbox or live). The app ships with **no catalogue data** — you enter your own vendors, products and offers. Sign-in accounts are the only seeded data.
 
 1. Start backend and frontend (see Setup) and open http://localhost:5173. Sign in with an account button on the login page. The seeded accounts are a **requester**, an **approver** and an **admin**; their shared password is `Keicy-Demo-2026` (from `backend/seed/data.py`; local test accounts only). As the admin you can also click **Import starter catalogue** in Vendor Intelligence instead of typing the catalogue in step 2.
 2. As the approver or admin, open **Vendor Intelligence** and build the catalogue:
@@ -65,7 +65,6 @@ Nothing is mocked: the agents use a real model (Claude, OpenAI or local Ollama) 
    - **Procurement** drafts the PO (prices come from your offers, never from the model).
    - **Finance** validates it.
 
-   This takes about 40 s on local Ollama.
 5. Sign out and sign in as the **approver**. In the **Approval Center**, review the AI recommendation and budget check, then **Approve** or **Reject** (a rejection needs a reason).
 6. Sign in as the requester again, open the request and click **Pay with PayPal**.
    - Use a regular browser; PayPal's popup can't open in embedded preview panes.
@@ -104,7 +103,7 @@ backend/
     api/routes/      health, catalog (vendors/products), procurement (requests)
     models/          17 tables: core.py · workflow.py · finance.py · enums.py
     db/session.py    async engine, Base with constraint naming convention
-    ai/              LLM gateway: providers.py (Anthropic, OpenAI, Ollama) · gateway.py · errors.py
+    ai/              LLM gateway: providers.py (Anthropic, OpenAI) · gateway.py · errors.py
     agents/          core/ (BaseAgent, runner, tool registry) · permissions.py · schemas.py
     tools/           20 agent tools: catalog · procurement · finance · payments
     workflow/        17-state machine (states.py, machine.py) · restart recovery
@@ -156,8 +155,8 @@ npm run dev
 Open http://localhost:5173. Vite proxies `/api` to the backend on port 8000.
 
 ### 4. LLMs
-`LLM_PROVIDERS=anthropic,ollama` sets the routing order. A cloud provider without an API key is skipped, so with no keys everything runs on Ollama.
-Set `OLLAMA_MODEL` to any model from `ollama list`. Keep `OLLAMA_THINK=false` for reasoning models (qwen3.x): it cut a structured call from about 68 s to about 17 s here.
+`LLM_PROVIDERS=anthropic` sets the routing order (add `,openai` for a fallback). A provider without an API key is skipped.
+Set `ANTHROPIC_API_KEY` in `backend/.env`. `ANTHROPIC_MODEL` defaults to `claude-opus-5-5` (use `claude-sonnet-5-5` for lower cost), and `ANTHROPIC_EFFORT` (`low`…`max`, default `medium`) sets how hard Claude thinks.
 
 ### 5. PayPal Sandbox
 1. https://developer.paypal.com/dashboard/applications/sandbox → **Create App** → put the **Client ID** and the **Secret** (two different values) into `backend/.env`.
@@ -256,10 +255,10 @@ APPROVED ─create-order→ PAYMENT_PENDING ─buyer approves at PayPal, capture
 ## Tests
 ```bash
 cd backend && uv run pytest              # 214 tests, no network needed
-cd backend && uv run pytest --live       # also calls your local Ollama
-cd frontend && npm run test:e2e          # Playwright: real Ollama + PayPal sandbox in a real browser, plus phone layout
+cd backend && uv run pytest --live       # also calls the real Claude API
+cd frontend && npm run test:e2e          # Playwright: real Claude + PayPal sandbox in a real browser, plus phone layout
 ```
-The E2E run creates its own `paypal_e2e` database (accounts only) and starts the real backend on :8100 — local Ollama for the agents, the PayPal sandbox from `backend/.env` — and the frontend on :5174. It then drives the UI: admin adds a vendor, product and offer → requester submits a request → agents run on Ollama → approver approves → the real PayPal sandbox button loads. Paying itself needs a person to sign in to a sandbox buyer account, so the run stops there. It also checks that every screen fits a phone, tablet and wide screen. Needs Ollama running and internet access. First-time setup: `npx playwright install chromium`.
+The E2E run creates its own `paypal_e2e` database (accounts only) and starts the real backend on :8100 — Claude for the agents, the PayPal sandbox from `backend/.env` — and the frontend on :5174. It then drives the UI: admin adds a vendor, product and offer → requester submits a request → agents run on Claude → approver approves → the real PayPal sandbox button loads. Paying itself needs a person to sign in to a sandbox buyer account, so the run stops there. It also checks that every screen fits a phone, tablet and wide screen. Needs `ANTHROPIC_API_KEY` set and internet access. First-time setup: `npx playwright install chromium`.
 The pytest suite drops and recreates `<DB_NAME>_test`, runs migrations up → down → up, seeds the accounts and imports the starter catalogue (`seed/catalog.py`). Model and PayPal stand-ins exist only inside `backend/tests/` and are injected by the tests; the app itself can't load them (`LLM_PROVIDERS=mock` and `PAYPAL_MODE=mock` are rejected at startup). It then tests:
 - schema, constraints and relationships
 - the API

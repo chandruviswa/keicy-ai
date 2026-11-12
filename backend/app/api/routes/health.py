@@ -25,7 +25,6 @@ async def health(llm: LLMGateway = Depends(get_llm), pp: PayPalClient = Depends(
 
     providers = await llm.status()
     cloud = [p for p in providers if p["name"] in CLOUD and p["configured"]]
-    ollama = next((p for p in providers if p["name"] == "ollama"), None)
     primary = next((p["name"] for p in providers if p["configured"]), None)
     s = get_settings()
     return {
@@ -37,8 +36,6 @@ async def health(llm: LLMGateway = Depends(get_llm), pp: PayPalClient = Depends(
             "providers": providers,  # in routing order
             "cloud_configured": bool(cloud),
             "cloud_model": cloud[0]["model"] if cloud else None,
-            "ollama_reachable": bool(ollama and ollama["reachable"]),
-            "ollama_model": ollama["model"] if ollama else None,
         },
         "paypal": {"configured": pp.configured, "mode": s.paypal_mode},
     }

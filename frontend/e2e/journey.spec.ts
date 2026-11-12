@@ -3,7 +3,7 @@ import { expect, test, type Page } from "@playwright/test";
 /**
  * One procurement journey driven only through the UI, against real services:
  * the catalogue is entered through the Vendor Intelligence forms, the agents use the real
- * local Ollama model, and checkout loads the real PayPal sandbox SDK. Paying needs a person
+ * Claude API, and checkout loads the real PayPal sandbox SDK. Paying needs a person
  * to sign in to a PayPal sandbox buyer account, so the test stops at the PayPal button.
  */
 
@@ -19,7 +19,7 @@ async function signOut(page: Page) {
   await expect(page.getByRole("heading", { name: "Sign in" })).toBeVisible();
 }
 
-test("catalogue → agents (Ollama) → approval → PayPal sandbox checkout", async ({ page }) => {
+test("catalogue → agents (Claude) → approval → PayPal sandbox checkout", async ({ page }) => {
   test.setTimeout(420_000);
 
   // 1. Admin builds the catalogue: a vendor, a product with comparable specs, and the vendor's offer.

@@ -175,10 +175,10 @@ function SystemStatus() {
     return () => document.removeEventListener("mousedown", close);
   }, []);
 
-  const llmOk = !!health && (health.llm.cloud_configured || health.llm.ollama_reachable);
+  const llmOk = !!health && health.llm.cloud_configured;
   const services = [
     { name: "Database", ok: !down && !!health?.database, detail: health?.schema_version ? `schema ${health.schema_version}` : "" },
-    { name: "AI models", ok: !down && llmOk, detail: health ? (health.llm.cloud_configured ? `cloud: ${health.llm.cloud_model}` : `local: ${health.llm.ollama_model}`) : "" },
+    { name: "AI models", ok: !down && llmOk, detail: health ? (health.llm.cloud_configured ? `Claude: ${health.llm.cloud_model}` : "no API key set") : "" },
     { name: "PayPal", ok: !down && !!health?.paypal.configured, detail: health ? health.paypal.mode : "" },
   ];
   const bad = services.filter((s) => !s.ok).length;

@@ -25,21 +25,19 @@ class Settings(BaseSettings):
 
     # --- AI gateway ---
     # Providers tried in order. Unconfigured cloud providers (no API key) are skipped.
-    llm_providers: str = "anthropic,ollama"
+    llm_providers: str = "anthropic"
     llm_timeout_s: float = 60
     llm_max_retries: int = 2  # attempts per provider for retryable errors (timeout, 429, 5xx)
     llm_retry_backoff_s: float = 1.0
 
     anthropic_api_key: str = ""
-    anthropic_model: str = Field("claude-sonnet-5-5", validation_alias=AliasChoices("ANTHROPIC_MODEL", "CLOUD_LLM_MODEL"))
+    anthropic_effort: Literal["low", "medium", "high", "xhigh", "max"] = "medium"
+    anthropic_thinking_headroom: int = 8000  # extra max_tokens for adaptive thinking on top of the output budget
+    anthropic_model: str = Field("claude-opus-5-5", validation_alias=AliasChoices("ANTHROPIC_MODEL", "CLOUD_LLM_MODEL"))
 
     openai_api_key: str = ""
     openai_model: str = "gpt-5"
 
-    ollama_base_url: str = "http://localhost:11434"
-    ollama_model: str = "llama3.1"
-    ollama_timeout_s: float = 180  # local models are slower than cloud
-    ollama_think: bool = False  # reasoning models (qwen3.x, etc.) are far faster with thinking off
 
     paypal_mode: Literal["sandbox", "live"] = "sandbox"  # real PayPal only; there is no simulated mode
     paypal_client_id: str = ""
@@ -61,9 +59,11 @@ class Settings(BaseSettings):
     def _real_models_only(cls, v: str) -> str:
         names = {p.strip().lower() for p in v.split(",") if p.strip()}
         if not names:
-            raise ValueError("LLM_PROVIDERS must name at least one provider (anthropic, openai, ollama)")
+            raise ValueError("LLM_PROVIDERS must name at least one provider (anthropic, openai)")
+        if "ollama" in names:
+            raise ValueError("LLM_PROVIDERS=ollama is no longer supported: use anthropic (Claude)")
         if "mock" in names:
-            raise ValueError("LLM_PROVIDERS=mock is no longer supported: use anthropic, openai or ollama")
+            raise ValueError("LLM_PROVIDERS=mock is no longer supported: use anthropic or openai")
         return v
 
     @property

@@ -36,7 +36,7 @@ async def generate(g):
 
 
 async def test_primary_success():
-    cloud, local = FakeProvider("anthropic", [GOOD]), FakeProvider("ollama", [GOOD])
+    cloud, local = FakeProvider("anthropic", [GOOD]), FakeProvider("openai", [GOOD])
     g, records = gw(cloud, local)
     res = await generate(g)
     assert res.data == Answer(product="laptop", quantity=5)
@@ -47,26 +47,26 @@ async def test_primary_success():
     assert cloud.calls[0]["json_schema"]["title"] == "Answer"
 
 
-async def test_cloud_unavailable_falls_back_to_ollama_after_retries():
+async def test_cloud_unavailable_falls_back_to_openai_after_retries():
     cloud = FakeProvider("anthropic", [err(K.UNAVAILABLE)])
-    local = FakeProvider("ollama", [GOOD])
+    local = FakeProvider("openai", [GOOD])
     g, records = gw(cloud, local, retries=2)
     res = await generate(g)
-    assert (res.provider, res.fallback_used, res.attempts) == ("ollama", True, 3)
+    assert (res.provider, res.fallback_used, res.attempts) == ("openai", True, 3)
     assert len(cloud.calls) == 2  # retried up to the limit
     assert [(r.provider, r.attempt, r.success, r.fallback_used, r.error_type) for r in records] == [
         ("anthropic", 1, False, False, "unavailable"),
         ("anthropic", 2, False, False, "unavailable"),
-        ("ollama", 1, True, True, None),
+        ("openai", 1, True, True, None),
     ]
 
 
 async def test_auth_error_is_not_retried():
     cloud = FakeProvider("anthropic", [err(K.AUTH)])
-    local = FakeProvider("ollama", [GOOD])
+    local = FakeProvider("openai", [GOOD])
     g, _ = gw(cloud, local, retries=3)
     res = await generate(g)
-    assert len(cloud.calls) == 1 and res.provider == "ollama"
+    assert len(cloud.calls) == 1 and res.provider == "openai"
 
 
 async def test_rate_limit_retry_limit_then_gateway_error():
@@ -81,17 +81,17 @@ async def test_rate_limit_retry_limit_then_gateway_error():
 
 async def test_timeout_is_classified_retried_and_falls_back():
     slow = FakeProvider("anthropic", [Sleep(1, GOOD)], timeout_s=0.05)
-    local = FakeProvider("ollama", [GOOD])
+    local = FakeProvider("openai", [GOOD])
     g, records = gw(slow, local, retries=2)
     res = await generate(g)
-    assert res.provider == "ollama"
+    assert res.provider == "openai"
     assert [r.error_type for r in records[:2]] == ["timeout", "timeout"]
     assert all(r.latency_ms < 500 for r in records[:2])
 
 
 async def test_invalid_json_is_repaired_on_same_provider():
     cloud = FakeProvider("anthropic", ["Sure! here you go", GOOD])
-    g, records = gw(cloud, FakeProvider("ollama", [GOOD]))
+    g, records = gw(cloud, FakeProvider("openai", [GOOD]))
     res = await generate(g)
     assert (res.provider, res.attempts) == ("anthropic", 2)
     repair_turn = cloud.calls[1]["messages"]
@@ -102,28 +102,28 @@ async def test_invalid_json_is_repaired_on_same_provider():
 
 async def test_schema_mismatch_twice_falls_back():
     cloud = FakeProvider("anthropic", ['{"product": "laptop"}', '{"quantity": "many"}'])
-    local = FakeProvider("ollama", [GOOD])
+    local = FakeProvider("openai", [GOOD])
     g, _ = gw(cloud, local)
     res = await generate(g)
-    assert res.provider == "ollama" and res.fallback_used
+    assert res.provider == "openai" and res.fallback_used
     assert len(cloud.calls) == 2  # original + one repair, no more
     assert [e.kind for e in res.errors] == [K.INVALID_OUTPUT, K.INVALID_OUTPUT]
 
 
 async def test_every_provider_invalid_raises():
-    g, _ = gw(FakeProvider("anthropic", ["nope"]), FakeProvider("ollama", ["[1, 2]"]))
+    g, _ = gw(FakeProvider("anthropic", ["nope"]), FakeProvider("openai", ["[1, 2]"]))
     with pytest.raises(LLMGatewayError) as e:
         await generate(g)
-    assert {x.provider for x in e.value.errors} == {"anthropic", "ollama"}
+    assert {x.provider for x in e.value.errors} == {"anthropic", "openai"}
     assert all(x.kind == K.INVALID_OUTPUT for x in e.value.errors)
 
 
 async def test_unconfigured_providers_are_skipped():
     cloud = FakeProvider("anthropic", [GOOD], configured=False)
-    local = FakeProvider("ollama", [GOOD])
+    local = FakeProvider("openai", [GOOD])
     g, _ = gw(cloud, local)
     res = await generate(g)
-    assert res.provider == "ollama" and res.fallback_used is False  # first *active* provider
+    assert res.provider == "openai" and res.fallback_used is False  # first *active* provider
     assert cloud.calls == []
 
 
@@ -139,15 +139,15 @@ async def test_unknown_adapter_exception_becomes_unavailable():
             self.calls.append(1)
             raise RuntimeError("socket exploded")
 
-    g, records = gw(Boom("anthropic", [GOOD]), FakeProvider("ollama", [GOOD]))
+    g, records = gw(Boom("anthropic", [GOOD]), FakeProvider("openai", [GOOD]))
     res = await generate(g)
-    assert res.provider == "ollama" and records[0].error_type == "unavailable"
+    assert res.provider == "openai" and records[0].error_type == "unavailable"
 
 
 async def test_generate_text_falls_back():
-    g, _ = gw(FakeProvider("anthropic", [err(K.AUTH)]), FakeProvider("ollama", ["plain words"]))
+    g, _ = gw(FakeProvider("anthropic", [err(K.AUTH)]), FakeProvider("openai", ["plain words"]))
     res = await g.generate_text(system="s", prompt="p")
-    assert (res.text, res.provider, res.fallback_used) == ("plain words", "ollama", True)
+    assert (res.text, res.provider, res.fallback_used) == ("plain words", "openai", True)
 
 
 @pytest.mark.parametrize("text", [
@@ -159,9 +159,9 @@ def test_extract_json_tolerates_wrapping(text):
 
 async def test_executions_are_persisted(db):
     purpose = f"persist-{uuid.uuid4().hex[:6]}"
-    g, _ = gw(FakeProvider("anthropic", [err(K.UNAVAILABLE)]), FakeProvider("ollama", [GOOD]), recorder=db_recorder)
+    g, _ = gw(FakeProvider("anthropic", [err(K.UNAVAILABLE)]), FakeProvider("openai", [GOOD]), recorder=db_recorder)
     await g.generate(Answer, system="s", prompt="p", purpose=purpose)
     rows = (await db.scalars(select(ModelExecution).where(ModelExecution.purpose == purpose).order_by(ModelExecution.created_at))).all()
     assert [(r.provider, r.success, r.fallback_used) for r in rows] == [
-        ("anthropic", False, False), ("anthropic", False, False), ("ollama", True, True)]
+        ("anthropic", False, False), ("anthropic", False, False), ("openai", True, True)]
     assert rows[-1].model == "fake-model" and rows[-1].input_tokens == 11

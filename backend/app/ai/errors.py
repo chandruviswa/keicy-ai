@@ -46,5 +46,5 @@ def kind_from_status(status: int | None) -> LLMErrorKind:
     if status is not None and status >= 500:
         return LLMErrorKind.UNAVAILABLE
     if status == 404:
-        return LLMErrorKind.UNAVAILABLE  # e.g. Ollama model not pulled — another provider may work
+        return LLMErrorKind.UNAVAILABLE  # e.g. unknown model id — another provider may work
     return LLMErrorKind.BAD_REQUEST

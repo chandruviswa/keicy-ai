@@ -29,7 +29,7 @@ BACKEND_DIR = os.path.dirname(os.path.dirname(__file__))
 
 
 def pytest_addoption(parser):
-    parser.addoption("--live", action="store_true", default=False, help="also run tests that call a real local Ollama")
+    parser.addoption("--live", action="store_true", default=False, help="also run tests that call the real Claude API (needs ANTHROPIC_API_KEY)")
 
 
 async def _recreate_test_db() -> None:

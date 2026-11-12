@@ -19,7 +19,7 @@ class Pick(BaseModel):
 
 
 def runner(*providers) -> AgentRunner:
-    providers = providers or (FakeProvider("ollama", ['{"sku": "LAP-PRO-14", "reason": "cheapest fit"}']),)
+    providers = providers or (FakeProvider("openai", ['{"sku": "LAP-PRO-14", "reason": "cheapest fit"}']),)
     return AgentRunner(gateway=LLMGateway(list(providers), settings=test_settings(), recorder=db_recorder))
 
 
@@ -43,7 +43,7 @@ async def test_successful_run_is_persisted_with_trace(db, request_id):
     res = await runner().run(ResearchLike(), request_id, {"hint": "laptops"})
     assert res.ok and res.tool_calls == 1
     assert res.output["pick"]["sku"] == "LAP-PRO-14" and res.output["options"] == 3
-    assert res.output["_notes"] == ["chose via ollama"]
+    assert res.output["_notes"] == ["chose via openai"]
 
     run = await db.get(AgentRun, res.agent_run_id)
     assert (run.status, run.agent_name, run.input) == ("SUCCEEDED", "research", {"hint": "laptops"})
@@ -51,19 +51,19 @@ async def test_successful_run_is_persisted_with_trace(db, request_id):
     assert await events(db, request_id) == ["agent.started", "agent.tool_called", "agent.completed"]
 
     execs = (await db.scalars(select(ModelExecution).where(ModelExecution.agent_run_id == res.agent_run_id))).all()
-    assert [(e.provider, e.success, e.purpose) for e in execs] == [("ollama", True, "research")]
+    assert [(e.provider, e.success, e.purpose) for e in execs] == [("openai", True, "research")]
 
 
 async def test_llm_fallback_inside_agent(db, request_id):
     res = await runner(FakeProvider("anthropic", [err(K.UNAVAILABLE)]),
-                       FakeProvider("ollama", ['{"sku": "X", "reason": "r"}'])).run(ResearchLike(), request_id)
+                       FakeProvider("openai", ['{"sku": "X", "reason": "r"}'])).run(ResearchLike(), request_id)
     assert res.ok
     execs = (await db.scalars(select(ModelExecution).where(ModelExecution.agent_run_id == res.agent_run_id).order_by(ModelExecution.created_at))).all()
-    assert [(e.provider, e.success, e.fallback_used) for e in execs] == [("anthropic", False, False), ("anthropic", False, False), ("ollama", True, True)]
+    assert [(e.provider, e.success, e.fallback_used) for e in execs] == [("anthropic", False, False), ("anthropic", False, False), ("openai", True, True)]
 
 
 async def test_all_llms_down_fails_the_run(db, request_id):
-    res = await runner(FakeProvider("ollama", [err(K.UNAVAILABLE)])).run(ResearchLike(), request_id)
+    res = await runner(FakeProvider("openai", [err(K.UNAVAILABLE)])).run(ResearchLike(), request_id)
     assert res.status == "FAILED" and "All LLM providers failed" in res.error
     assert (await events(db, request_id))[-1] == "agent.failed"
 
@@ -127,13 +127,13 @@ def test_idempotency_key_is_stable(request_id):
     assert ctx.idempotency_key("create_po") == f"{request_id}:research:create_po" == ctx.idempotency_key("create_po")
 
 
-@pytest.mark.skipif("not config.getoption('--live')", reason="needs a running Ollama; run with --live")
-async def test_live_ollama_structured_output(request_id):
-    from app.ai.providers import OllamaProvider
+@pytest.mark.skipif("not config.getoption('--live')", reason="calls the real Claude API; run with --live")
+async def test_live_claude_structured_output(request_id):
+    from app.ai.providers import AnthropicProvider
     from app.core.config import Settings
 
-    gw = LLMGateway([OllamaProvider(Settings())], settings=test_settings(), recorder=None)
+    gw = LLMGateway([AnthropicProvider(Settings())], settings=test_settings(), recorder=None)
     res = await gw.generate(Pick, system="Pick the best laptop SKU for a designer.",
                             prompt="Options: LAP-PRO-14 (16GB), LAP-ULTRA-16 (32GB), LAP-ESS-13 (8GB)")
-    assert res.provider == "ollama" and res.data.sku.startswith("LAP-")
-    print(f"\nlive ollama: {res.latency_ms} ms → {res.data}")
+    assert res.provider == "anthropic" and res.data.sku.startswith("LAP-")
+    print(f"\nlive claude ({res.model}): {res.latency_ms} ms → {res.data}")

@@ -57,7 +57,7 @@ class RoutingProvider(FakeProvider):
     A reply is a str/dict, an LLMError, a Sleep, or a callable(prompt) -> any of those.
     """
 
-    def __init__(self, routes: dict, name: str = "ollama", **kw) -> None:
+    def __init__(self, routes: dict, name: str = "openai", **kw) -> None:
         super().__init__(name, ["{}"], **kw)
         self.routes = routes
 

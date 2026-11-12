@@ -6,7 +6,7 @@ export type Health = {
   status: "ok" | "degraded";
   database: boolean;
   schema_version: string | null;
-  llm: { cloud_configured: boolean; cloud_model: string; ollama_reachable: boolean; ollama_model: string };
+  llm: { cloud_configured: boolean; cloud_model: string | null };
   paypal: { configured: boolean; mode: string };
 };
 

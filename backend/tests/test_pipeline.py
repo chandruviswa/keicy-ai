@@ -104,7 +104,7 @@ async def test_laptop_request_produces_po_awaiting_approval(db):
 
     ev = (await latest_output(db, rid, "evaluation"))
     assert [c["vendor_name"] for c in ev["ranking"]] == ["Fabrikam Office", "Northwind IT Supply", "Contoso Devices"]
-    assert ev["explanation_source"] == "llm:ollama"
+    assert ev["explanation_source"] == "llm:openai"
 
     states = [h.to_state for h in (await db.scalars(select(WorkflowStateHistory).where(WorkflowStateHistory.request_id == rid).order_by(WorkflowStateHistory.created_at))).all()]
     assert states == ["ANALYZING", "RESEARCHING", "EVALUATING", "ORDER_DRAFTED", "FINANCE_VALIDATING", "AWAITING_APPROVAL"]
@@ -232,14 +232,14 @@ async def test_agent_timeout_fails_request(db, monkeypatch):
     assert final == S.FAILED and "intent agent timed_out" in await last_reason(db, rid)
 
 
-async def test_llm_fallback_to_ollama(db):
+async def test_llm_fallback_to_openai(db):
     cloud = RoutingProvider({"Agent": err(K.UNAVAILABLE)}, name="anthropic")
     local = RoutingProvider(routes())
     rid, final, _ = await run(db, [cloud, local])
     assert final == S.AWAITING_APPROVAL
     runs = (await db.scalars(select(AgentRun.id).where(AgentRun.request_id == rid))).all()
     execs = (await db.scalars(select(ModelExecution).where(ModelExecution.agent_run_id.in_(runs)))).all()
-    assert {e.provider for e in execs if e.success} == {"ollama"} and all(e.fallback_used for e in execs if e.success)
+    assert {e.provider for e in execs if e.success} == {"openai"} and all(e.fallback_used for e in execs if e.success)
 
 
 async def test_all_llms_down_fails_request(db):
