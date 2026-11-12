@@ -1,4 +1,4 @@
-# Procura AI — Autonomous Procurement Intelligence
+# Keicy AI — Autonomous Procurement Intelligence
 
 > Built for the **PayPal AI Hackathon 2026**: an agentic-commerce app where AI agents source, compare and draft purchases, a human approves, and **PayPal Checkout (Orders v2, Sandbox)** pays and reconciles them.
 
@@ -8,7 +8,7 @@
 
 Small and mid-sized companies buy laptops, monitors and supplies the slow way. Someone emails vendors for quotes, pastes prices into a spreadsheet, chases a manager for sign-off, pays by card or invoice, then reconciles the payment by hand. It takes days, approvals get skipped, and nobody can show why a vendor was chosen.
 
-Procura AI is for **operations and finance teams at SMBs**. A requester types what they need in plain English. Five AI agents turn it into a costed, budget-checked purchase order with a written justification. An approver signs it off, and the requester pays through PayPal in one click. A sixth agent then checks the PayPal capture against the PO and writes the receipt. Every step is audited.
+Keicy AI is for **operations and finance teams at SMBs**. A requester types what they need in plain English. Five AI agents turn it into a costed, budget-checked purchase order with a written justification. An approver signs it off, and the requester pays through PayPal in one click. A sixth agent then checks the PayPal capture against the PO and writes the receipt. Every step is audited.
 
 ## How PayPal and AI are used
 
@@ -20,13 +20,13 @@ Procura AI is for **operations and finance teams at SMBs**. A requester types wh
 ## Quick start for judges
 
 1. Follow **Setup** below. You need Postgres (or `docker compose up -d postgres`), Python 3.12 with `uv`, Node 20+, a free PayPal Sandbox app, and **either** an Anthropic/OpenAI API key **or** a local [Ollama](https://ollama.com) model.
-2. Sign in with these seeded **local test accounts** (one-click buttons on the login page). All share the password `Procura-Demo-2026`:
+2. Sign in with these seeded **local test accounts** (one-click buttons on the login page). All share the password `Keicy-Demo-2026`:
 
    | Role | Email |
    |---|---|
-   | Requester | `requester@procura.local` |
-   | Approver | `approver@procura.local` |
-   | Admin | `admin@procura.local` |
+   | Requester | `requester@keicy.local` |
+   | Approver | `approver@keicy.local` |
+   | Admin | `admin@keicy.local` |
 
 3. As the admin, open **Vendor Intelligence → Import starter catalogue** to load vendors, products and offers in one click.
 4. Pay with a **PayPal sandbox personal (buyer) account** from your own Developer Dashboard (Testing Tools → Sandbox Accounts). No real money moves.
@@ -50,7 +50,7 @@ Build plan: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) · **All 
 
 Nothing is mocked: the agents use a real model (Claude, OpenAI or local Ollama) and payments go through the real PayPal REST API (sandbox or live). The app ships with **no catalogue data** — you enter your own vendors, products and offers. Sign-in accounts are the only seeded data.
 
-1. Start backend and frontend (see Setup) and open http://localhost:5173. Sign in with an account button on the login page. The seeded accounts are a **requester**, an **approver** and an **admin**; their shared password is `Procura-Demo-2026` (from `backend/seed/data.py`; local test accounts only). As the admin you can also click **Import starter catalogue** in Vendor Intelligence instead of typing the catalogue in step 2.
+1. Start backend and frontend (see Setup) and open http://localhost:5173. Sign in with an account button on the login page. The seeded accounts are a **requester**, an **approver** and an **admin**; their shared password is `Keicy-Demo-2026` (from `backend/seed/data.py`; local test accounts only). As the admin you can also click **Import starter catalogue** in Vendor Intelligence instead of typing the catalogue in step 2.
 2. As the approver or admin, open **Vendor Intelligence** and build the catalogue:
    - **Add vendor**: name, contact email, country, rating.
    - **Add product**: name, SKU, category and comparable specs (e.g. `ram_gb` = `16`).

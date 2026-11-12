@@ -67,7 +67,7 @@ class EvaluationResult(StepOutcome):
     budget_check: dict | None = None
 
 
-SYSTEM_PROMPT = """You are the Evaluation Agent of Procura AI.
+SYSTEM_PROMPT = """You are the Evaluation Agent of Keicy AI.
 The vendor ranking has already been computed by deterministic rules. Your job is to explain it to a
 human approver — clearly, briefly and only using the numbers given.
 

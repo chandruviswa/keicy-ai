@@ -24,7 +24,7 @@ class ProcurementResult(StepOutcome):
     unavailable: list[str] = Field(default_factory=list)
 
 
-SYSTEM_PROMPT = """You are the Procurement Agent of Procura AI. You convert an approved vendor recommendation
+SYSTEM_PROMPT = """You are the Procurement Agent of Keicy AI. You convert an approved vendor recommendation
 into a purchase order. All quantities, prices and totals are computed by deterministic tools from the
 database; you never estimate or alter money amounts."""
 

@@ -43,7 +43,7 @@ export default function Login() {
       <aside className="relative hidden overflow-hidden bg-ink-900 px-10 py-12 text-ink-100 lg:flex lg:flex-col xl:px-16">
         <div className="flex items-center gap-3">
           <span className="grid h-10 w-10 place-items-center rounded-lg bg-white text-lg font-extrabold text-ink-900">P</span>
-          <span className="text-lg font-semibold text-white">Procura</span>
+          <span className="text-lg font-semibold text-white">Keicy</span>
         </div>
         <div className="my-auto max-w-xl py-12">
           <h1 className="text-4xl leading-[1.1] font-semibold tracking-tight text-white xl:text-5xl">From a sentence to a paid purchase order.</h1>
@@ -71,7 +71,7 @@ export default function Login() {
           <div className="mb-8 flex items-center gap-3 lg:hidden">
             <span className="grid h-10 w-10 place-items-center rounded-lg bg-ink-900 text-lg font-extrabold text-white">P</span>
             <div>
-              <p className="font-semibold">Procura</p>
+              <p className="font-semibold">Keicy</p>
               <p className="text-sm text-ink-500">From a sentence to a paid purchase order</p>
             </div>
           </div>
@@ -100,7 +100,7 @@ export default function Login() {
                 <span className="h-px flex-1 bg-line" />
               </div>
               <ul className="grid gap-2">
-                {demo.accounts.filter((a) => a.email !== "requester2@procura.local").map((a) => (
+                {demo.accounts.filter((a) => a.email !== "requester2@keicy.local").map((a) => (
                   <li key={a.email}>
                     <button
                       disabled={!!busy}

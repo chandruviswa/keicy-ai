@@ -39,7 +39,7 @@ class IntentResult(StepOutcome):
     llm_provider: str | None = None
 
 
-SYSTEM_PROMPT = f"""You are the Intent Agent of Procura AI, an enterprise procurement system.
+SYSTEM_PROMPT = f"""You are the Intent Agent of Keicy AI, an enterprise procurement system.
 Turn a purchase request written in plain language into structured requirements.
 
 Rules:

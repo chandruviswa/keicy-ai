@@ -32,18 +32,18 @@ def test_password_hashing():
 
 
 async def test_login_and_me(anon_client: AsyncClient, db):
-    r = await login(anon_client, "Approver@Procura.local")  # email is case-insensitive
+    r = await login(anon_client, "Approver@Keicy.local")  # email is case-insensitive
     assert r.status_code == 200, r.text
     body = r.json()
     assert body["user"]["role"] == "approver" and body["token_type"] == "bearer"
     me = await anon_client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {body['access_token']}"})
-    assert me.json()["email"] == "approver@procura.local"
+    assert me.json()["email"] == "approver@keicy.local"
     assert await db.scalar(select(AuditLog.id).where(AuditLog.action == "auth.login", AuditLog.entity_id == uuid.UUID(body["user"]["id"])))
 
 
 async def test_bad_credentials_look_identical(anon_client: AsyncClient):
     wrong_pw = await login(anon_client, DEMO_USER_EMAIL, "nope")
-    unknown = await login(anon_client, "ghost@procura.local", "nope")
+    unknown = await login(anon_client, "ghost@keicy.local", "nope")
     assert wrong_pw.status_code == unknown.status_code == 401
     assert wrong_pw.json() == unknown.json() == {"detail": "Incorrect email or password"}
 
@@ -80,12 +80,12 @@ async def test_bad_and_expired_tokens(anon_client: AsyncClient, db):
     assert r.status_code == 401 and "expired" in r.json()["detail"]
     # A token signed with another key is rejected.
     import jwt as pyjwt
-    forged = pyjwt.encode({"sub": str(user.id), "iss": "procura-ai", "iat": 0, "exp": 9_999_999_999}, "attacker-key-that-is-long-enough-for-hs256-0123456789", algorithm="HS256")
+    forged = pyjwt.encode({"sub": str(user.id), "iss": "keicy-ai", "iat": 0, "exp": 9_999_999_999}, "attacker-key-that-is-long-enough-for-hs256-0123456789", algorithm="HS256")
     assert (await anon_client.get("/api/v1/auth/me", headers={"Authorization": f"Bearer {forged}"})).status_code == 401
 
 
 async def test_disabled_user_is_locked_out(anon_client: AsyncClient, db):
-    u = User(email=f"temp-{uuid.uuid4().hex[:6]}@procura.local", full_name="Temp", role="requester", password_hash=hash_password("pw"))
+    u = User(email=f"temp-{uuid.uuid4().hex[:6]}@keicy.local", full_name="Temp", role="requester", password_hash=hash_password("pw"))
     db.add(u)
     await db.commit()
     headers = await auth(u.email)
@@ -98,7 +98,7 @@ async def test_disabled_user_is_locked_out(anon_client: AsyncClient, db):
 
 async def test_roles_and_ownership(client: AsyncClient, approver):
     rid = (await client.post("/api/v1/procurement/requests", json={"raw_text": "two monitors please"})).json()["id"]
-    other = await auth("requester2@procura.local")
+    other = await auth("requester2@keicy.local")
     # Another requester can't see, edit, run or cancel it — and gets 404, not 403, so ids can't be probed.
     for method, path in (("GET", ""), ("PATCH", ""), ("POST", "/execute"), ("POST", "/cancel"), ("GET", "/status")):
         r = await client.request(method, f"/api/v1/procurement/requests/{rid}{path}", json={}, headers=other)

@@ -36,7 +36,7 @@ class ReconciliationResult(StepOutcome):
     discrepancies: list[str] = Field(default_factory=list)
 
 
-SYSTEM_PROMPT = """You are the Reconciliation Agent of Procura AI. You confirm that money PayPal reports as
+SYSTEM_PROMPT = """You are the Reconciliation Agent of Keicy AI. You confirm that money PayPal reports as
 captured matches the approved purchase order exactly, then close the order and issue a receipt.
 You rely only on PayPal's API and the database; a payment you cannot verify is never marked complete."""
 

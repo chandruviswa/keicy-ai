@@ -29,7 +29,7 @@ from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker
 from app.models import AgentToolLog, WorkflowEvent
 from app.models.enums import ToolCallStatus
 
-log = logging.getLogger("procura.tools")
+log = logging.getLogger("keicy.tools")
 
 A = TypeVar("A", bound=BaseModel)
 R = TypeVar("R", bound=BaseModel)

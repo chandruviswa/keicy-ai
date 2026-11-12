@@ -39,7 +39,7 @@ async def test_every_response_has_a_request_id(anon_client: AsyncClient):
 def test_json_log_lines_carry_request_id():
     token = request_id_var.set("rid-42")
     try:
-        record = logging.LogRecord("procura.test", logging.INFO, __file__, 1, "hello %s", ("world",), None)
+        record = logging.LogRecord("keicy.test", logging.INFO, __file__, 1, "hello %s", ("world",), None)
         record.status = 200
         line = json.loads(JsonFormatter().format(record))
     finally:

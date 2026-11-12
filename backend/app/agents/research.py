@@ -50,7 +50,7 @@ class ResearchResult(StepOutcome):
     items: list[ItemResearch] = Field(default_factory=list)
 
 
-SYSTEM_PROMPT = """You are the Research Agent of Procura AI.
+SYSTEM_PROMPT = """You are the Research Agent of Keicy AI.
 You receive one requirement and a list of catalogue products. Decide, for EACH listed product, whether it
 meets the requirement.
 

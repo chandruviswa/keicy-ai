@@ -19,7 +19,7 @@ from sqlalchemy.exc import DBAPIError, OperationalError
 from starlette.types import ASGIApp, Receive, Scope, Send
 
 request_id_var: ContextVar[str | None] = ContextVar("request_id", default=None)
-log = logging.getLogger("procura.http")
+log = logging.getLogger("keicy.http")
 
 
 class JsonFormatter(logging.Formatter):

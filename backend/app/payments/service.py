@@ -32,7 +32,7 @@ from app.tools.common import money
 from app.workflow import Actor, has_approval, transition
 from app.workflow.events import emit
 
-log = logging.getLogger("procura.payments")
+log = logging.getLogger("keicy.payments")
 
 OPEN_PAYPAL_STATUSES = {"CREATED", "SAVED", "APPROVED", "PAYER_ACTION_REQUIRED"}
 DECLINED_CAPTURE = {"DECLINED", "DENIED", "FAILED"}
@@ -122,7 +122,7 @@ class PaymentService:
 
         try:
             order = await self.paypal.create_order(
-                amount=amount, currency=po.currency, reference_id=str(po.id), description=f"Procura {po.po_number}",
+                amount=amount, currency=po.currency, reference_id=str(po.id), description=f"Keicy {po.po_number}",
                 invoice_id=f"{po.po_number}-{payment.attempt}", request_id=payment.idempotency_key,
             )
         except PayPalNotConfigured as e:

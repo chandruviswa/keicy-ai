@@ -17,9 +17,9 @@ class Settings(BaseSettings):
 
     db_host: str = "localhost"
     db_port: int = 5432
-    db_name: str = "procura"
-    db_user: str = "procura"
-    db_password: str = "procura"
+    db_name: str = "keicy"
+    db_user: str = "keicy"
+    db_password: str = "keicy"
     # Optional full URL; when set it overrides the DB_* parts (used by tests).
     database_url_override: str = Field("", alias="DATABASE_URL")
 

@@ -77,7 +77,7 @@ function Sidebar({ compact = false, onNavigate }: { compact?: boolean; onNavigat
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-white text-[15px] font-extrabold text-ink-900">P</span>
         {!compact && (
           <span className="leading-tight">
-            <span className="block text-[15px] font-semibold text-white">Procura</span>
+            <span className="block text-[15px] font-semibold text-white">Keicy</span>
             <span className="block text-xs text-ink-300">Procurement desk</span>
           </span>
         )}

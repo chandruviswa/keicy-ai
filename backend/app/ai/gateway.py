@@ -31,7 +31,7 @@ from app.ai.errors import LLMError, LLMErrorKind, LLMGatewayError
 from app.ai.providers import LLMProvider, Message, build_providers
 from app.core.config import Settings, get_settings
 
-log = logging.getLogger("procura.ai")
+log = logging.getLogger("keicy.ai")
 
 T = TypeVar("T", bound=BaseModel)
 

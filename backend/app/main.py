@@ -15,7 +15,7 @@ from app.workflow import recover_interrupted
 
 settings = get_settings()
 configure_logging(settings.log_format, settings.log_level)
-log = logging.getLogger("procura")
+log = logging.getLogger("keicy")
 
 API_PREFIX = "/api/v1"
 
@@ -32,7 +32,7 @@ async def lifespan(_: FastAPI):
     await engine.dispose()
 
 
-app = FastAPI(title="Procura AI", description="Autonomous Procurement Intelligence", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="Keicy AI", description="Autonomous Procurement Intelligence", version="1.0.0", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,

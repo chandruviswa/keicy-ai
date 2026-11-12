@@ -39,7 +39,7 @@ class FinanceResult(StepOutcome):
     blocked_reasons: list[str] = Field(default_factory=list)
 
 
-SYSTEM_PROMPT = """You are the Finance Agent of Procura AI. You validate purchase orders against budget,
+SYSTEM_PROMPT = """You are the Finance Agent of Keicy AI. You validate purchase orders against budget,
 currency and arithmetic rules before they reach a human approver. Financial decisions are made only by
 deterministic checks on database records; you never approve payments yourself."""
 

@@ -22,7 +22,7 @@ export default function Audit() {
 
   return (
     <>
-      <PageHeader title="Intelligence & Audit" description="How the agents, models and tools behaved — and a permanent record of every action taken in Procura." />
+      <PageHeader title="Intelligence & Audit" description="How the agents, models and tools behaved — and a permanent record of every action taken in Keicy." />
       {totals && (
         <div className="mb-6 grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <Stat label="Agent runs" value={totals.runs} />

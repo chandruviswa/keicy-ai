@@ -139,9 +139,9 @@ async def client(anon_client):
 
 @pytest.fixture
 async def approver():
-    return await auth("approver@procura.local")
+    return await auth("approver@keicy.local")
 
 
 @pytest.fixture
 async def admin():
-    return await auth("admin@procura.local")
+    return await auth("admin@keicy.local")

@@ -1,4 +1,4 @@
-# Procura AI — Implementation Plan (5 parts)
+# Keicy AI — Implementation Plan (5 parts)
 
 Source: `Project Document` (12 phases). This plan groups those 12 phases into 5 parts, each of which can be built, tested and shipped on its own, in order.
 

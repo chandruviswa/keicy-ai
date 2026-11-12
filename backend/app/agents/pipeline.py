@@ -34,7 +34,7 @@ from app.workflow import Actor, WorkflowError, transition
 from app.workflow.events import emit
 from app.workflow.recovery import register_resumer
 
-log = logging.getLogger("procura.pipeline")
+log = logging.getLogger("keicy.pipeline")
 
 RESUMABLE = frozenset({S.ANALYZING, S.RESEARCHING, S.EVALUATING, S.ORDER_DRAFTED, S.FINANCE_VALIDATING, S.PAYMENT_COMPLETED, S.RECONCILING})
 

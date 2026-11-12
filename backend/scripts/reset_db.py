@@ -29,7 +29,7 @@ def _dev_db_name() -> str:
     """DB_NAME as written in .env (ignoring environment overrides) — the database holding your dev data."""
     from dotenv import dotenv_values
 
-    return (dotenv_values(".env").get("DB_NAME") or "procura").strip()
+    return (dotenv_values(".env").get("DB_NAME") or "keicy").strip()
 
 
 def main() -> None:

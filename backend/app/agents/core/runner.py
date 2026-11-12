@@ -19,7 +19,7 @@ from app.ai.gateway import LLMGateway, get_gateway
 from app.models import AgentRun, WorkflowEvent
 from app.models.enums import RunStatus
 
-log = logging.getLogger("procura.agents")
+log = logging.getLogger("keicy.agents")
 
 
 class AgentRunner:

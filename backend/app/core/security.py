@@ -14,12 +14,12 @@ import jwt
 
 from app.core.config import get_settings
 
-log = logging.getLogger("procura.security")
+log = logging.getLogger("keicy.security")
 
 # scrypt parameters (n=2^14, r=8, p=1 ≈ 16 MB, ~50 ms): OWASP-recommended minimum for interactive logins.
 _N, _R, _P, _DKLEN = 2**14, 8, 1, 32
 _ALGO = "HS256"
-_ISSUER = "procura-ai"
+_ISSUER = "keicy-ai"
 
 
 def hash_password(password: str) -> str:

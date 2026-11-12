@@ -20,7 +20,7 @@ from app.models.enums import WorkflowState
 from app.workflow.machine import Actor, WorkflowError, transition
 from app.workflow.states import AGENT_ACTIVE
 
-log = logging.getLogger("procura.workflow")
+log = logging.getLogger("keicy.workflow")
 
 Resumer = Callable[[uuid.UUID, WorkflowState], Awaitable[None]]
 _resumers: dict[WorkflowState, Resumer] = {}

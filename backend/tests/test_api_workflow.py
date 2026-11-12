@@ -114,7 +114,7 @@ async def test_cancel(client: AsyncClient):
 
 
 async def test_demo_header_no_longer_switches_user(anon_client: AsyncClient):
-    r = await anon_client.get("/api/v1/procurement/requests", headers={"X-Demo-User": "approver@procura.local"})
+    r = await anon_client.get("/api/v1/procurement/requests", headers={"X-Demo-User": "approver@keicy.local"})
     assert r.status_code == 401
 
 
@@ -170,11 +170,11 @@ async def test_websocket_replays_then_streams_live(db, request_id):
         assert ws.receive_json()["event_type"] == "workflow.state_changed"
 
 
-@pytest.mark.parametrize("who,code", [("requester@procura.local", 4404), (None, 4401), ("requester2@procura.local", 4404)])
+@pytest.mark.parametrize("who,code", [("requester@keicy.local", 4404), (None, 4401), ("requester2@keicy.local", 4404)])
 async def test_websocket_rejects_unknown_or_unauthorised(request_id, who, code):
     from starlette.websockets import WebSocketDisconnect
 
-    target = uuid.uuid4() if who == "requester@procura.local" else request_id  # requester2 may not see requester's request
+    target = uuid.uuid4() if who == "requester@keicy.local" else request_id  # requester2 may not see requester's request
     q = f"?token={await token_for(who)}" if who else ""
     with TestClient(app).websocket_connect(f"/api/v1/ws/workflows/{target}{q}") as ws:
         with pytest.raises(WebSocketDisconnect) as e:

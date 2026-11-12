@@ -77,7 +77,7 @@ export class ApiError extends Error {
 }
 
 // ---------- session token ----------
-const TOKEN_KEY = "procura.token";
+const TOKEN_KEY = "keicy.token";
 let token: string | null = (() => {
   try {
     return localStorage.getItem(TOKEN_KEY);
@@ -98,7 +98,7 @@ export const session = {
   },
 };
 /** Fired when the server says the session is no longer valid, so the app can return to sign-in. */
-export const SESSION_EXPIRED = "procura:session-expired";
+export const SESSION_EXPIRED = "keicy:session-expired";
 
 async function req<T>(path: string, init?: RequestInit): Promise<T> {
   const headers: Record<string, string> = { "Content-Type": "application/json", ...((init?.headers as Record<string, string>) ?? {}) };
