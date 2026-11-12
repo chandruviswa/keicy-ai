@@ -1,14 +1,14 @@
 import { defineConfig, devices } from "@playwright/test";
 
 /**
- * End-to-end: a fresh `paypal_e2e` database, the real backend in demo modes (rule-based LLM, PayPal
- * simulator) on :8100, and the real frontend on :5174. Everything else — agents, tools, scoring,
- * state machine, approvals, payments, reconciliation, WebSocket — is the production code path.
+ * End-to-end: a fresh `paypal_e2e` database (accounts only, empty catalogue), the real backend on
+ * :8100 using the local Ollama model and the PayPal sandbox from backend/.env, and the real frontend
+ * on :5174. Nothing is mocked; Ollama must be running and the machine needs internet for PayPal.
  */
 const backendEnv = [
   "DB_NAME=paypal_e2e",
-  "LLM_PROVIDERS=mock",
-  "PAYPAL_MODE=mock",
+  "LLM_PROVIDERS=ollama",
+  "PAYPAL_MODE=sandbox",
   "APP_ENV=e2e",
   "LOG_FORMAT=text",
   "LOG_LEVEL=WARNING",

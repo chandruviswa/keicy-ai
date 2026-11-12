@@ -41,6 +41,7 @@ class OfferOut(ORM):
     valid_until: date
     is_expired: bool
     specs: dict[str, Any]
+    is_active: bool = True
 
 
 class ProductOut(ORM):
@@ -56,6 +57,79 @@ class ProductOut(ORM):
 
 class VendorDetailOut(VendorOut):
     offers: list[OfferOut] = []
+
+
+class VendorIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    name: str = Field(min_length=2, max_length=200)
+    contact_email: str = Field(min_length=3, max_length=254, pattern=r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+    country: str = Field(min_length=2, max_length=2, description="ISO 3166-1 alpha-2, e.g. US")
+    rating: Decimal = Field(Decimal("4.00"), ge=0, le=5, max_digits=3, decimal_places=2)
+
+
+class VendorPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    is_active: bool
+
+
+class ProductIn(BaseModel):
+    model_config = ConfigDict(extra="forbid", str_strip_whitespace=True)
+    sku: str = Field(min_length=2, max_length=64, pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$")
+    name: str = Field(min_length=2, max_length=200)
+    category: str = Field(min_length=2, max_length=64)
+    description: str = Field("", max_length=2000)
+    unit: str = Field("each", min_length=1, max_length=20)
+    specs: dict[str, Any] = Field(default_factory=dict, description="Comparable attributes, e.g. {\"ram_gb\": 16}")
+
+
+class OfferIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    vendor_id: uuid.UUID
+    product_id: uuid.UUID
+    unit_price: Decimal = Field(gt=0, max_digits=14, decimal_places=2)
+    currency: str = Field("USD", pattern=r"^[A-Z]{3}$")
+    available_quantity: int = Field(ge=0)
+    min_order_quantity: int = Field(1, ge=1)
+    lead_time_days: int = Field(ge=0, le=365)
+    valid_until: date
+    specs: dict[str, Any] = Field(default_factory=dict, description="Vendor-specific variant of the product specs")
+
+
+class OfferPatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    is_active: bool | None = None
+    unit_price: Decimal | None = Field(None, gt=0, max_digits=14, decimal_places=2)
+    available_quantity: int | None = Field(None, ge=0)
+    valid_until: date | None = None
+
+
+class StarterVendor(BaseModel):
+    name: str
+    contact_email: str
+    country: str
+    rating: Decimal
+    offers: int
+    imported: bool
+
+
+class StarterProduct(BaseModel):
+    sku: str
+    name: str
+    category: str
+    description: str
+    offers: int
+    imported: bool
+
+
+class StarterCatalog(BaseModel):
+    vendors: list[StarterVendor]
+    products: list[StarterProduct]
+
+
+class StarterImportIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    vendors: list[str] | None = Field(None, description="Vendor names to import; omit for all")
+    skus: list[str] | None = Field(None, description="Product SKUs to import; omit for all")
 
 
 class ProcurementRequestIn(BaseModel):

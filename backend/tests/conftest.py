@@ -1,7 +1,7 @@
 """Tests run against a real PostgreSQL database: <DB_NAME>_test, created automatically.
 
 Session setup: create the test DB → alembic upgrade → downgrade → upgrade (proves migrations
-are reversible) → seed. Tests add their own rows with unique names, so they don't need cleanup.
+are reversible) → seed accounts → load the test-only catalogue (tests/catalog_fixture.py). Tests add their own rows with unique names, so they don't need cleanup.
 """
 
 import asyncio
@@ -58,10 +58,12 @@ def database():
 
     from app.db.session import SessionLocal
     from seed.seed import seed_all
+    from seed.catalog import load_catalog
 
     async def _seed():
         async with SessionLocal() as db:
             await seed_all(db)
+            await load_catalog(db)
 
     asyncio.run(_seed())
     yield

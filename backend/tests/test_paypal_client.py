@@ -37,10 +37,10 @@ async def test_create_order_sends_exact_amount_and_request_id():
     assert seen[0].headers["Authorization"].startswith("Basic ")  # client secret only goes to the token endpoint
 
 
-async def test_capture_sends_mock_header_in_sandbox():
+async def test_capture_is_idempotent_and_never_forces_a_mock_response():
     c, seen = client(lambda r: httpx.Response(201, json={"id": "O1", "status": "COMPLETED", "purchase_units": [{"payments": {"captures": [{"id": "C1"}]}}]}))
-    o = await c.capture_order("O1", request_id="capture-O1", mock_response="INSTRUMENT_DECLINED")
-    assert json.loads(seen[-1].headers["PayPal-Mock-Response"]) == {"mock_application_codes": "INSTRUMENT_DECLINED"}
+    o = await c.capture_order("O1", request_id="capture-O1")
+    assert "PayPal-Mock-Response" not in seen[-1].headers
     assert seen[-1].headers["PayPal-Request-Id"] == "capture-O1" and captures_of(o) == [{"id": "C1"}]
 
 

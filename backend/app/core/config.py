@@ -1,8 +1,9 @@
 from decimal import Decimal
 from functools import lru_cache
+from typing import Literal
 from urllib.parse import quote_plus
 
-from pydantic import AliasChoices, Field
+from pydantic import AliasChoices, Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -40,7 +41,7 @@ class Settings(BaseSettings):
     ollama_timeout_s: float = 180  # local models are slower than cloud
     ollama_think: bool = False  # reasoning models (qwen3.x, etc.) are far faster with thinking off
 
-    paypal_mode: str = "sandbox"
+    paypal_mode: Literal["sandbox", "live"] = "sandbox"  # real PayPal only; there is no simulated mode
     paypal_client_id: str = ""
     paypal_client_secret: str = ""
     paypal_currency: str = "USD"
@@ -54,6 +55,16 @@ class Settings(BaseSettings):
     access_token_minutes: int = 480
     # Show the seeded demo accounts on the login page (never in production).
     demo_accounts_enabled: bool = True
+
+    @field_validator("llm_providers")
+    @classmethod
+    def _real_models_only(cls, v: str) -> str:
+        names = {p.strip().lower() for p in v.split(",") if p.strip()}
+        if not names:
+            raise ValueError("LLM_PROVIDERS must name at least one provider (anthropic, openai, ollama)")
+        if "mock" in names:
+            raise ValueError("LLM_PROVIDERS=mock is no longer supported: use anthropic, openai or ollama")
+        return v
 
     @property
     def llm_provider_list(self) -> list[str]:

@@ -191,10 +191,6 @@ PROVIDER_CLASSES: dict[str, type[LLMProvider]] = {
 
 
 def build_providers(s: Settings) -> list[LLMProvider]:
-    if "mock" in s.llm_provider_list and "mock" not in PROVIDER_CLASSES:
-        from app.ai.mock import MockProvider
-
-        PROVIDER_CLASSES["mock"] = MockProvider
     unknown = [n for n in s.llm_provider_list if n not in PROVIDER_CLASSES]
     if unknown:
         raise ValueError(f"Unknown LLM provider(s) in LLM_PROVIDERS: {unknown}")

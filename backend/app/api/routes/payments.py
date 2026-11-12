@@ -30,8 +30,6 @@ class CreateOrderIn(BaseModel):
 class CaptureIn(BaseModel):
     model_config = ConfigDict(extra="forbid")
     paypal_order_id: str = Field(min_length=1, max_length=64)
-    # Sandbox negative testing (e.g. "INSTRUMENT_DECLINED"); ignored outside sandbox / in production.
-    simulate: str | None = Field(None, max_length=64, pattern=r"^[A-Z_]+$")
 
 
 class CancelIn(BaseModel):
@@ -93,8 +91,6 @@ def _raise(e: PaymentError):
 async def payment_config(pp: PayPalClient = Depends(get_paypal), _: User = Depends(get_current_user)):
     """Public values the browser needs for the PayPal JS SDK v6. The secret never leaves the server."""
     s = get_settings()
-    if s.paypal_mode == "mock" and s.app_env != "production":
-        return {"configured": True, "client_id": "", "currency": s.paypal_currency, "mode": "mock", "sdk_url": None, "negative_testing": True}
     sandbox = s.paypal_mode != "live"
     return {
         "configured": pp.configured,
@@ -102,25 +98,7 @@ async def payment_config(pp: PayPalClient = Depends(get_paypal), _: User = Depen
         "currency": s.paypal_currency,
         "mode": "sandbox" if sandbox else "live",
         "sdk_url": "https://www.sandbox.paypal.com/web-sdk/v6/core" if sandbox else "https://www.paypal.com/web-sdk/v6/core",
-        "negative_testing": sandbox and s.app_env != "production",
     }
-
-
-@router.post("/mock/approve")
-async def mock_buyer_approval(body: CancelIn, db: AsyncSession = Depends(get_session), user: User = Depends(get_current_user),
-                              pp: PayPalClient = Depends(get_paypal)):
-    """PAYPAL_MODE=mock only: stands in for the buyer approving in PayPal's window."""
-    s = get_settings()
-    if s.paypal_mode != "mock" or s.app_env == "production" or not hasattr(pp, "approve"):
-        raise HTTPException(404, "Not found")
-    row = await db.scalar(select(PayPalOrder).where(PayPalOrder.paypal_order_id == body.paypal_order_id))
-    payment = await db.get(Payment, row.payment_id) if row else None
-    po = await db.get(PurchaseOrder, payment.purchase_order_id) if payment else None
-    pr = await db.get(ProcurementRequest, po.request_id) if po else None
-    if not pr or pr.requester_id != user.id:
-        raise HTTPException(404, "PayPal order not found")
-    pp.approve(body.paypal_order_id)
-    return {"paypal_order_id": body.paypal_order_id, "status": "APPROVED"}
 
 
 @router.post("/create-order")
@@ -138,10 +116,8 @@ async def create_order(body: CreateOrderIn, db: AsyncSession = Depends(get_sessi
 @router.post("/capture", response_model=CaptureOut)
 async def capture(body: CaptureIn, db: AsyncSession = Depends(get_session), user: User = Depends(get_current_user),
                   pp: PayPalClient = Depends(get_paypal)):
-    s = get_settings()
-    simulate = body.simulate if (s.paypal_mode != "live" and s.app_env != "production") else None
     try:
-        out = await PaymentService(db, pp).capture(body.paypal_order_id, user, mock_response=simulate)
+        out = await PaymentService(db, pp).capture(body.paypal_order_id, user)
     except PaymentError as e:
         _raise(e)
     code = 202 if out.status == "PROCESSING" else 200

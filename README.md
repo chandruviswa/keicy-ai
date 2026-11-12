@@ -1,5 +1,40 @@
 # Procura AI — Autonomous Procurement Intelligence
 
+> Built for the **PayPal AI Hackathon 2026**: an agentic-commerce app where AI agents source, compare and draft purchases, a human approves, and **PayPal Checkout (Orders v2, Sandbox)** pays and reconciles them.
+
+**Demo video:** _<YouTube link — add before submitting>_ · **License:** [MIT](LICENSE)
+
+## The problem and who it's for
+
+Small and mid-sized companies buy laptops, monitors and supplies the slow way. Someone emails vendors for quotes, pastes prices into a spreadsheet, chases a manager for sign-off, pays by card or invoice, then reconciles the payment by hand. It takes days, approvals get skipped, and nobody can show why a vendor was chosen.
+
+Procura AI is for **operations and finance teams at SMBs**. A requester types what they need in plain English. Five AI agents turn it into a costed, budget-checked purchase order with a written justification. An approver signs it off, and the requester pays through PayPal in one click. A sixth agent then checks the PayPal capture against the PO and writes the receipt. Every step is audited.
+
+## How PayPal and AI are used
+
+| | What it does |
+|---|---|
+| **PayPal (central)** | PayPal JS SDK v6 button → server-side **Orders v2** create (the amount always comes from the approved PO, never the browser) → **capture** with `PayPal-Request-Id` idempotency → capture verified against the PO (amount and currency) → **webhook** signature verification (`verify-webhook-signature`) → **Reconciliation agent** re-reads the order from PayPal before marking the PO paid. Declines, buyer cancels, timeouts and retries are all handled. |
+| **AI (agentic)** | LLM gateway (Anthropic Claude → OpenAI → local Ollama fallback, with retries and schema repair). It runs the Intent, Research, Evaluation, Procurement, Finance and Reconciliation agents through permissioned, idempotent tools, with live progress over WebSocket. Agents can **never** move money: payment needs a recorded human approval. |
+
+## Quick start for judges
+
+1. Follow **Setup** below. You need Postgres (or `docker compose up -d postgres`), Python 3.12 with `uv`, Node 20+, a free PayPal Sandbox app, and **either** an Anthropic/OpenAI API key **or** a local [Ollama](https://ollama.com) model.
+2. Sign in with these seeded **local test accounts** (one-click buttons on the login page). All share the password `Procura-Demo-2026`:
+
+   | Role | Email |
+   |---|---|
+   | Requester | `requester@procura.local` |
+   | Approver | `approver@procura.local` |
+   | Admin | `admin@procura.local` |
+
+3. As the admin, open **Vendor Intelligence → Import starter catalogue** to load vendors, products and offers in one click.
+4. Pay with a **PayPal sandbox personal (buyer) account** from your own Developer Dashboard (Testing Tools → Sandbox Accounts). No real money moves.
+
+## Built during the hackathon
+
+The whole project was created during the Submission Period (Oct 1 – Nov 12, 2026). No earlier version exists; see the git history.
+
 | Layer | Tech |
 |---|---|
 | Frontend | React 19 + Vite 7 + TypeScript + Tailwind CSS 4, React Router, Lucide, Recharts (`frontend/`) |
@@ -13,14 +48,21 @@ Build plan: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) · **All 
 
 ## Try it
 
-1. Start backend and frontend (see Setup) and open http://localhost:5173. Sign in with a demo account button on the login page. The seeded accounts are a **requester**, an **approver** and an **admin**; their password is in `backend/seed/data.py`.
-2. As the requester, open **AI Workspace**.
-3. Type e.g. `10 laptops, 16GB RAM, under $15,000 by Dec 1` → **Submit & run agents**.
+Nothing is mocked: the agents use a real model (Claude, OpenAI or local Ollama) and payments go through the real PayPal REST API (sandbox or live). The app ships with **no catalogue data** — you enter your own vendors, products and offers. Sign-in accounts are the only seeded data.
+
+1. Start backend and frontend (see Setup) and open http://localhost:5173. Sign in with an account button on the login page. The seeded accounts are a **requester**, an **approver** and an **admin**; their shared password is `Procura-Demo-2026` (from `backend/seed/data.py`; local test accounts only). As the admin you can also click **Import starter catalogue** in Vendor Intelligence instead of typing the catalogue in step 2.
+2. As the approver or admin, open **Vendor Intelligence** and build the catalogue:
+   - **Add vendor**: name, contact email, country, rating.
+   - **Add product**: name, SKU, category and comparable specs (e.g. `ram_gb` = `16`).
+   - **Add offer** (or **+ Offer** on a product): that vendor's unit price, stock, minimum order, delivery days and expiry date.
+
+   Give a product offers from two or more vendors so the agents have a real choice. Vendors and offers can be paused; paused, expired and out-of-stock offers are never ordered.
+3. As the requester, open **AI Workspace**, type e.g. `10 laptops, 16GB RAM, under $15,000 by Dec 1` and click **Submit & run agents**.
 4. Watch the five agents work live:
    - **Intent** extracts the requirements.
    - **Research** finds catalogue products and quotes.
    - **Evaluation** scores vendors.
-   - **Procurement** drafts the PO.
+   - **Procurement** drafts the PO (prices come from your offers, never from the model).
    - **Finance** validates it.
 
    This takes about 40 s on local Ollama.
@@ -32,16 +74,8 @@ Build plan: [docs/IMPLEMENTATION_PLAN.md](docs/IMPLEMENTATION_PLAN.md) · **All 
 8. Look around:
    - **Payment Center**: every attempt, PayPal references, receipts.
    - **Purchase Orders**: all orders and their status.
-   - **Intelligence & Audit** (approver/admin): agent performance, model usage, tool calls and the append-only audit trail.
+   - **Intelligence & Audit** (approver/admin): agent performance, model usage, tool calls and the append-only audit trail, including catalogue changes.
 
-On the sandbox, *Sandbox test → simulate card declined* exercises the failure path.
-
-### No GPU or PayPal account? Demo modes
-Set `LLM_PROVIDERS=mock` and/or `PAYPAL_MODE=mock` in `backend/.env`:
-- **mock LLM:** a rule-based stand-in for the model.
-- **mock PayPal:** an in-process simulator of orders, buyer approval and capture; the button reads "(simulated)".
-
-Everything else runs the real code: agents, tools, scoring, state machine, approvals, payment checks, reconciliation. Both modes are refused when `APP_ENV=production`.
 
 ## Design
 
@@ -74,10 +108,10 @@ backend/
     agents/          core/ (BaseAgent, runner, tool registry) · permissions.py · schemas.py
     tools/           20 agent tools: catalog · procurement · finance · payments
     workflow/        17-state machine (states.py, machine.py) · restart recovery
-    payments/        paypal.py (REST client) · service.py (create, capture, settle, cancel, webhooks, recovery) · mock.py
+    payments/        paypal.py (REST client) · service.py (create, capture, settle, cancel, webhooks, recovery)
     core/            config · security.py (passwords, JWT) · observability.py (JSON logs, request ids, error handling)
   migrations/        Alembic (async)
-  seed/              idempotent demo catalogue:  uv run python -m seed
+  seed/              sign-in accounts only:  uv run python -m seed
   tests/             runs against a real Postgres test DB (<DB_NAME>_test)
 frontend/src/
   components/        Layout (sidebar + header), ui.tsx (cards, badges, buttons, states)
@@ -106,7 +140,7 @@ cd backend
 cp .env.example .env              # then edit DB_* and keys
 uv sync
 uv run alembic upgrade head       # create / update the schema
-uv run python -m seed             # demo users, vendors, products, offers (safe to re-run)
+uv run python -m seed             # sign-in accounts only (safe to re-run); add your catalogue in the app
 uv run uvicorn app.main:app --reload --port 8000
 ```
 API docs: http://localhost:8000/docs · status: http://localhost:8000/api/v1/health
@@ -129,7 +163,6 @@ Set `OLLAMA_MODEL` to any model from `ollama list`. Keep `OLLAMA_THINK=false` fo
 1. https://developer.paypal.com/dashboard/applications/sandbox → **Create App** → put the **Client ID** and the **Secret** (two different values) into `backend/.env`.
 2. Testing Tools → Sandbox Accounts: use the **personal** account to pay in checkout.
 3. *Optional, for webhooks:* expose the backend publicly (e.g. `cloudflared tunnel --url http://localhost:8000`). Add a webhook for `https://<tunnel>/api/v1/payments/webhook` with the events `PAYMENT.CAPTURE.*` and `CHECKOUT.ORDER.APPROVED`, then set `PAYPAL_WEBHOOK_ID`.
-4. *Optional, for declines:* the sandbox negative-testing flag on your sandbox **business** account enables the "simulate card declined" option.
 
 ## Database
 
@@ -222,12 +255,12 @@ APPROVED ─create-order→ PAYMENT_PENDING ─buyer approves at PayPal, capture
 
 ## Tests
 ```bash
-cd backend && uv run pytest              # 207 tests, no network needed (PayPal and LLMs are simulated)
+cd backend && uv run pytest              # 214 tests, no network needed
 cd backend && uv run pytest --live       # also calls your local Ollama
-cd frontend && npm run test:e2e          # Playwright: full journey in a real browser + phone layout (~20 s)
+cd frontend && npm run test:e2e          # Playwright: real Ollama + PayPal sandbox in a real browser, plus phone layout
 ```
-The E2E run creates its own `paypal_e2e` database and starts the backend in demo modes on :8100 and the frontend on :5174. It then drives the UI: sign in → request → five agents → refresh (state restored) → approver approves → PayPal checkout → reconciliation → receipt → Payment Center, Purchase Orders, Overview and Audit. It also covers the clarification and rejection paths and checks that every screen fits a phone. First-time setup: `npx playwright install chromium`.
-The suite drops and recreates `<DB_NAME>_test`, runs migrations up → down → up, and seeds it. It then tests:
+The E2E run creates its own `paypal_e2e` database (accounts only) and starts the real backend on :8100 — local Ollama for the agents, the PayPal sandbox from `backend/.env` — and the frontend on :5174. It then drives the UI: admin adds a vendor, product and offer → requester submits a request → agents run on Ollama → approver approves → the real PayPal sandbox button loads. Paying itself needs a person to sign in to a sandbox buyer account, so the run stops there. It also checks that every screen fits a phone, tablet and wide screen. Needs Ollama running and internet access. First-time setup: `npx playwright install chromium`.
+The pytest suite drops and recreates `<DB_NAME>_test`, runs migrations up → down → up, seeds the accounts and imports the starter catalogue (`seed/catalog.py`). Model and PayPal stand-ins exist only inside `backend/tests/` and are injected by the tests; the app itself can't load them (`LLM_PROVIDERS=mock` and `PAYPAL_MODE=mock` are rejected at startup). It then tests:
 - schema, constraints and relationships
 - the API
 - the LLM gateway (fake providers) and the real SDK adapters (mocked HTTP)
@@ -244,6 +277,9 @@ Your dev database is never touched.
 | GET | `/api/v1/auth/me`, `/api/v1/auth/demo-accounts` | current user; seeded demo accounts (dev only) |
 | GET | `/api/v1/vendors`, `/api/v1/vendors/{id}` | vendors (detail includes offers) |
 | GET | `/api/v1/products?category=&q=` | products with offers, cheapest first |
+| POST, PATCH | `/api/v1/vendors`, `/api/v1/vendors/{id}` | add a vendor; pause/resume it (approver/admin) |
+| POST | `/api/v1/products` | add a product with specs (approver/admin) |
+| POST, PATCH | `/api/v1/offers`, `/api/v1/offers/{id}` | add a vendor's offer for a product; change price, stock, expiry or pause it (approver/admin) |
 | POST, GET | `/api/v1/procurement/requests` | create / list your requests |
 | GET, PATCH | `/api/v1/procurement/requests/{id}` | one request; edit while CREATED/FAILED |
 | POST | `/api/v1/procurement/requests/{id}/execute` | start or re-run the agents (202, runs in background) |

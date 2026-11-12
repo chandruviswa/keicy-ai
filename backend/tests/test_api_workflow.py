@@ -126,6 +126,15 @@ async def test_dashboard_summary(client: AsyncClient, llm, admin):
     assert all(a["event_type"] != "agent.tool_called" for a in s["recent_activity"])
     admin = (await client.get("/api/v1/dashboard/summary", headers=admin)).json()
     assert admin["total_requests"] >= s["total_requests"]
+    assert s["scope"] == "mine" and admin["scope"] == "organisation"
+    assert {st["key"] for st in s["pipeline"]} == {"intake", "agents", "approval", "payment", "completed", "attention", "closed"}
+    assert sum(st["count"] for st in s["pipeline"]) == s["total_requests"]
+    assert len(s["spend_by_day"]) == 30 and s["spend_by_day"][-1]["date"] == __import__("datetime").date.today().isoformat()
+    assert float(s["money"]["awaiting_approval"]) > 0
+    assert s["speed"]["median_minutes_to_po"] is not None
+    assert s["agents"]["runs"] >= 5 and s["agents"]["success_rate"] is not None
+    cat = s["catalogue"]
+    assert cat["vendors"] >= 4 and cat["products"] >= 10 and cat["live_offers"] > 0 and cat["expired"] >= 1 and cat["out_of_stock"] >= 1
 
 
 async def test_purchase_order_listing_scoped_to_requester(client: AsyncClient, llm, approver):

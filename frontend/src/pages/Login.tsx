@@ -96,7 +96,7 @@ export default function Login() {
             <div className="mt-10">
               <div className="mb-3 flex items-center gap-3 text-sm text-ink-500">
                 <span className="h-px flex-1 bg-line" />
-                Or try a demo account
+                Or sign in with a team account
                 <span className="h-px flex-1 bg-line" />
               </div>
               <ul className="grid gap-2">
@@ -119,7 +119,7 @@ export default function Login() {
                   </li>
                 ))}
               </ul>
-              <p className="mt-3 text-xs text-ink-400">Demo accounts are available in development only.</p>
+              <p className="mt-3 text-xs text-ink-400">Live accounts — every request runs the real AI agents and real PayPal checkout.</p>
             </div>
           )}
         </div>

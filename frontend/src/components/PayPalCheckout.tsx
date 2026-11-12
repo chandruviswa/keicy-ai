@@ -17,10 +17,7 @@ export function PayPalCheckout({ purchaseOrderId, amount, currency, poNumber, on
   const [session, setSession] = useState<PaymentSession | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "ineligible" | "working" | "error">("loading");
   const [message, setMessage] = useState<string | null>(null);
-  const [simulate, setSimulate] = useState("");
   const currentOrder = useRef<string | null>(null);
-  const simulateRef = useRef(simulate);
-  simulateRef.current = simulate;
   const finished = useRef(onFinished);
   finished.current = onFinished;
 
@@ -31,10 +28,6 @@ export function PayPalCheckout({ purchaseOrderId, amount, currency, poNumber, on
         const cfg = await api.paymentConfig();
         if (cancelled) return;
         setConfig(cfg);
-        if (cfg.mode === "mock") {
-          setState("ready");
-          return;
-        }
         if (!cfg.configured || !cfg.client_id || !cfg.sdk_url) {
           setState("error");
           setMessage("PayPal isn't configured on the server (PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET).");
@@ -53,7 +46,7 @@ export function PayPalCheckout({ purchaseOrderId, amount, currency, poNumber, on
               setState("working");
               setMessage("Confirming payment with PayPal…");
               try {
-                const result = await api.capturePayPalOrder(orderId, simulateRef.current || undefined);
+                const result = await api.capturePayPalOrder(orderId);
                 setMessage(result.status === "FAILED" ? result.message : null);
                 setState(result.status === "FAILED" ? "ready" : "working");
                 finished.current(result);
@@ -89,23 +82,6 @@ export function PayPalCheckout({ purchaseOrderId, amount, currency, poNumber, on
     };
   }, [currency]);
 
-  /** PAYPAL_MODE=mock: same server flow (create-order → buyer approval → capture) with the approval simulated. */
-  async function payMock() {
-    setState("working");
-    setMessage("Simulating PayPal checkout…");
-    try {
-      const order = await api.createPayPalOrder(purchaseOrderId);
-      await api.mockApprove(order.orderId);
-      const result = await api.capturePayPalOrder(order.orderId, simulateRef.current || undefined);
-      setMessage(result.status === "FAILED" ? result.message : null);
-      setState(result.status === "FAILED" ? "ready" : "working");
-      finished.current(result);
-    } catch (e) {
-      setState("ready");
-      setMessage(e instanceof Error ? e.message : String(e));
-    }
-  }
-
   async function pay() {
     if (!session) return;
     setMessage(null);
@@ -128,32 +104,18 @@ export function PayPalCheckout({ purchaseOrderId, amount, currency, poNumber, on
         <span className="flex items-center gap-2 text-sm font-medium"><CreditCard size={15} /> Pay {poNumber}</span>
         <span className="text-xl font-semibold tabular-nums">{formatMoney(amount, currency)}</span>
       </div>
-      <p className="mt-1 text-xs text-ink-500">Amount set by the approved purchase order{config ? ` · PayPal ${config.mode}${config.mode === "mock" ? " (no real PayPal)" : ""}` : ""}.</p>
+      <p className="mt-1 text-xs text-ink-500">Amount set by the approved purchase order{config ? ` · PayPal ${config.mode}` : ""}.</p>
 
       <div className="mt-3 min-h-11">
         {state === "loading" && <span className="flex items-center gap-2 text-sm text-ink-500"><Loader2 size={15} className="animate-spin" /> Loading PayPal…</span>}
         {state === "ineligible" && <p className="text-sm text-canary-700">PayPal isn't available for {currency} in this browser.</p>}
-        {(state === "ready" || state === "working") && config?.mode === "mock" && (
-          <button onClick={payMock} disabled={state === "working"} className="rounded-full bg-[#ffc439] px-6 py-2.5 text-sm font-semibold text-[#003087] hover:brightness-95 disabled:opacity-50">
-            Pay with PayPal <span className="font-normal">(simulated)</span>
-          </button>
-        )}
-        {(state === "ready" || state === "working") && config?.mode !== "mock" && (
+        {(state === "ready" || state === "working") && (
           <div className={state === "working" ? "pointer-events-none opacity-50" : ""}>
             <paypal-button type="pay" onClick={pay} />
           </div>
         )}
       </div>
 
-      {config?.negative_testing && state !== "error" && (
-        <label className="mt-2 flex items-center gap-2 text-xs text-ink-500">
-          Sandbox test:
-          <select value={simulate} onChange={(e) => setSimulate(e.target.value)} className="rounded border border-line bg-white px-1.5 py-0.5">
-            <option value="">normal capture</option>
-            <option value="INSTRUMENT_DECLINED">simulate card declined</option>
-          </select>
-        </label>
-      )}
       {message && <p className={`mt-2 text-sm ${state === "error" ? "text-stamp-700" : "text-ink-700"}`}>{message}</p>}
     </div>
   );

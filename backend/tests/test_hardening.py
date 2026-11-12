@@ -1,4 +1,4 @@
-"""Request ids, structured logs, error handling, append-only history, insight endpoints, demo modes."""
+"""Request ids, structured logs, error handling, append-only history, insight endpoints, real-provider-only config."""
 
 import json
 import logging
@@ -13,13 +13,14 @@ import app.payments.paypal as paypal_module
 from app.agents.core.runner import AgentRunner
 from app.agents.pipeline import ProcurementPipeline, executor
 from app.ai.gateway import LLMGateway
-from app.ai.mock import MockProvider
 from app.api.deps import get_paypal
 from app.core.observability import JsonFormatter, request_id_var
 from app.db.session import get_session
 from app.main import app
 from app.models import AuditLog, WorkflowStateHistory
+from tests.fake_paypal import FakePayPal
 from tests.fakes import test_settings
+from tests.scripted_llm import MockProvider
 
 LAPTOPS = "10 laptops, 16GB RAM, under $15,000 by Dec 1"
 
@@ -102,7 +103,8 @@ async def test_audit_and_history_are_append_only(db, request_id):
 # ---------- insight endpoints ----------
 
 @pytest.fixture
-def mock_llm(monkeypatch):
+def scripted_llm(monkeypatch):
+    """A rule-based LLM stand-in injected by the test (the app itself only runs real models)."""
     gw = LLMGateway([MockProvider(test_settings())], settings=test_settings(), recorder=None)
     monkeypatch.setattr(executor, "pipeline_factory", lambda: ProcurementPipeline(runner=AgentRunner(gateway=gw)))
 
@@ -116,7 +118,7 @@ async def run_to_approval(client: AsyncClient) -> tuple[str, str]:
     return rid, status["purchase_order_id"]
 
 
-async def test_mock_llm_runs_the_real_pipeline(client: AsyncClient, mock_llm):
+async def test_scripted_llm_runs_the_real_pipeline(client: AsyncClient, scripted_llm):
     rid, _ = await run_to_approval(client)
     offers = (await client.get(f"/api/v1/procurement/requests/{rid}/offers")).json()
     assert offers["requirement"]["items"][0] == {"product_name": "laptop", "quantity": 10, "specifications": {"ram_gb_min": 16}, "category": "laptops"}
@@ -124,23 +126,29 @@ async def test_mock_llm_runs_the_real_pipeline(client: AsyncClient, mock_llm):
     assert {p["sku"] for p in offers["items"][0]["products"]} == {"LAP-PRO-14", "LAP-ULTRA-16"}  # 8 GB model excluded by spec
 
 
-async def test_mock_paypal_full_journey_and_insights(client: AsyncClient, mock_llm, monkeypatch, approver):
-    from app.core.config import get_settings
-
-    monkeypatch.setattr(paypal_module, "_mock", None)
-    monkeypatch.setattr(get_settings(), "paypal_mode", "mock")
+async def test_full_journey_and_insights(client: AsyncClient, scripted_llm, monkeypatch, approver):
+    fake = FakePayPal()
+    monkeypatch.setattr(paypal_module, "paypal", fake)
     rid, po_id = await run_to_approval(client)
     assert (await client.post(f"/api/v1/purchase-orders/{po_id}/approve", headers=approver)).status_code == 200
 
     cfg = (await client.get("/api/v1/payments/config")).json()
-    assert cfg["mode"] == "mock" and cfg["sdk_url"] is None
+    assert cfg["mode"] == "sandbox" and cfg["sdk_url"] == "https://www.sandbox.paypal.com/web-sdk/v6/core"
     order = (await client.post("/api/v1/payments/create-order", json={"purchase_order_id": po_id})).json()
-    assert (await client.post("/api/v1/payments/mock/approve", json={"paypal_order_id": order["orderId"]}, headers=approver)).status_code == 404
-    assert (await client.post("/api/v1/payments/mock/approve", json={"paypal_order_id": order["orderId"]})).status_code == 200
+    fake.approve(order["orderId"])  # the buyer approves in PayPal's window
     cap = (await client.post("/api/v1/payments/capture", json={"paypal_order_id": order["orderId"]})).json()
     assert cap["status"] == "COMPLETED"
     await executor.wait(uuid.UUID(rid))
     assert (await client.get(f"/api/v1/procurement/requests/{rid}/status")).json()["status"] == "COMPLETED"
+
+    # Overview reflects the paid order
+    dash = (await client.get("/api/v1/dashboard/summary")).json()
+    assert float(dash["money"]["paid"]) >= 11890 and float(dash["money"]["paid_last_30d"]) >= 11890
+    assert any(v["vendor"] == "Fabrikam Office" for v in dash["spend_by_vendor"])
+    assert any(c["category"] == "laptops" for c in dash["spend_by_category"])
+    assert float(dash["spend_by_day"][-1]["amount"]) >= 11890
+    assert dash["approvals"]["approved"] >= 1 and dash["speed"]["median_hours_to_complete"] is not None
+    assert float(dash["money"]["saved_vs_highest_quote"]) >= 0
 
     # Payment Center / Approval Center / Audit views
     pays = (await client.get("/api/v1/payments")).json()
@@ -160,20 +168,31 @@ async def test_mock_paypal_full_journey_and_insights(client: AsyncClient, mock_l
     assert {a["action"] for a in audit} >= {"payment.order_created", "payment.completed"}
 
 
-async def test_mock_modes_are_refused_in_production(client: AsyncClient, monkeypatch):
+def test_mock_modes_are_rejected_by_config():
+    from pydantic import ValidationError
+
+    from app.core.config import Settings
+
+    with pytest.raises(ValidationError, match="no longer supported"):
+        Settings(llm_providers="mock")
+    with pytest.raises(ValidationError):
+        Settings(paypal_mode="mock")
+    assert paypal_module.get_client() is paypal_module.paypal
+
+
+async def test_mock_payment_routes_are_gone(client: AsyncClient):
+    assert (await client.post("/api/v1/payments/mock/approve", json={"paypal_order_id": "X"})).status_code in (404, 405)
+    r = await client.post("/api/v1/payments/capture", json={"paypal_order_id": "X", "simulate": "INSTRUMENT_DECLINED"})
+    assert r.status_code == 422  # no forced-decline switch on the capture endpoint
+
+
+async def test_demo_accounts_hidden_in_production(client: AsyncClient, monkeypatch):
+    from app.core import security
     from app.core.config import get_settings
 
-    from app.core import security
-
     s = get_settings()
-    monkeypatch.setattr(s, "jwt_secret", security._secret())  # production refuses to run without an explicit secret
-    monkeypatch.setattr(s, "paypal_mode", "mock")
+    monkeypatch.setattr(s, "jwt_secret", security._secret())
     monkeypatch.setattr(s, "app_env", "production")
-    monkeypatch.setattr(paypal_module, "_mock", None)
-    assert paypal_module.get_client() is paypal_module.paypal  # the real client, not the simulator
-    assert not MockProvider(test_settings(app_env="production")).configured
-    r = await client.post("/api/v1/payments/mock/approve", json={"paypal_order_id": "X"})
-    assert r.status_code == 404
     demo = (await client.get("/api/v1/auth/demo-accounts")).json()
     assert demo == {"enabled": False, "accounts": []}
 

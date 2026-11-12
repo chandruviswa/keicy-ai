@@ -164,7 +164,7 @@ class PaymentService:
 
     # ------------------------------------------------------------------ capture
 
-    async def capture(self, paypal_order_id: str, user: User, *, mock_response: str | None = None) -> CaptureOutcome:
+    async def capture(self, paypal_order_id: str, user: User) -> CaptureOutcome:
         ppo, payment, po, pr = await self._load_by_order(paypal_order_id, lock=True)
         self._check_owner(pr, user, "PayPal order not found")
 
@@ -185,12 +185,12 @@ class PaymentService:
                          payload={"paypal_order_id": paypal_order_id}, commit=False)
         await self.db.commit()  # persist "processing" before talking to PayPal
 
-        return await self._capture_and_settle(payment.id, paypal_order_id, mock_response=mock_response)
+        return await self._capture_and_settle(payment.id, paypal_order_id)
 
-    async def _capture_and_settle(self, payment_id: uuid.UUID, paypal_order_id: str, *, mock_response: str | None = None) -> CaptureOutcome:
+    async def _capture_and_settle(self, payment_id: uuid.UUID, paypal_order_id: str) -> CaptureOutcome:
         request_id = f"capture-{paypal_order_id}"  # same id on every retry → PayPal never captures twice
         try:
-            order = await self.paypal.capture_order(paypal_order_id, request_id=request_id, mock_response=mock_response)
+            order = await self.paypal.capture_order(paypal_order_id, request_id=request_id)
         except PayPalTimeout:
             return await self.resolve(payment_id, retry_capture=False)
         except PayPalError as e:

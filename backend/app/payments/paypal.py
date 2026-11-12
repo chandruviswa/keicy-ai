@@ -114,9 +114,8 @@ class PayPalClient:
     async def get_order(self, order_id: str) -> dict[str, Any]:
         return await self._request("GET", f"/v2/checkout/orders/{order_id}")
 
-    async def capture_order(self, order_id: str, *, request_id: str, mock_response: str | None = None) -> dict[str, Any]:
-        headers = {"PayPal-Mock-Response": json.dumps({"mock_application_codes": mock_response})} if mock_response else None
-        return await self._request("POST", f"/v2/checkout/orders/{order_id}/capture", content=b"{}", request_id=request_id, headers=headers)
+    async def capture_order(self, order_id: str, *, request_id: str) -> dict[str, Any]:
+        return await self._request("POST", f"/v2/checkout/orders/{order_id}/capture", content=b"{}", request_id=request_id)
 
     # ---------- webhooks ----------
 
@@ -175,18 +174,6 @@ def approve_link(order: dict[str, Any]) -> str | None:
 paypal = PayPalClient()
 
 
-_mock = None
-
-
 def get_client() -> PayPalClient:
-    """The process-wide client. PAYPAL_MODE=mock (never in production) returns the in-memory simulator;
-    tests swap `app.payments.paypal.paypal` for their own fake."""
-    global _mock
-    s = get_settings()
-    if s.paypal_mode == "mock" and s.app_env != "production" and paypal.__class__ is PayPalClient:
-        if _mock is None:
-            from app.payments.mock import MockPayPal
-
-            _mock = MockPayPal()
-        return _mock
+    """The process-wide PayPal REST client (sandbox or live). Tests swap `app.payments.paypal.paypal` for a fake."""
     return paypal

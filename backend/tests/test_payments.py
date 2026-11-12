@@ -138,7 +138,9 @@ async def test_duplicate_capture_is_harmless(client: AsyncClient, db, pp):
 
 async def test_declined_then_retry_with_new_order(client: AsyncClient, db, pp):
     rid, po_id = await approved_po(db)
-    order_id, cap = await checkout(client, pp, po_id, simulate="INSTRUMENT_DECLINED")
+    pp.capture_mode = "decline"
+    order_id, cap = await checkout(client, pp, po_id)
+    pp.capture_mode = "complete"
     assert cap.json()["status"] == "FAILED" and "INSTRUMENT_DECLINED" in cap.json()["message"]
     assert await status_of(rid) == "PAYMENT_FAILED"
 

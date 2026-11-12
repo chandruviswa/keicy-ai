@@ -12,7 +12,8 @@ from app.models import (
     Approval, AuditLog, Payment, PayPalCapture, PayPalOrder, Product, ProcurementRequest,
     PurchaseOrder, PurchaseOrderItem, User, Vendor, VendorOffer,
 )
-from seed.data import DEMO_USER_EMAIL, OFFERS, PRODUCTS, VENDORS
+from seed.data import DEMO_USER_EMAIL
+from seed.catalog import OFFERS, PRODUCTS, VENDORS, load_catalog
 from seed.seed import seed_all
 
 EXPECTED_TABLES = {
@@ -100,7 +101,8 @@ async def test_column_types(db):
 
 
 async def test_seed_counts_and_idempotency(db):
-    assert await seed_all(db) == {"users": 0, "vendors": 0, "products": 0, "offers": 0}
+    assert await seed_all(db) == {"users": 0}
+    assert await load_catalog(db) == {"vendors": 0, "products": 0, "offers": 0}
     assert len(VENDORS) >= 4 and 10 <= len(PRODUCTS) <= 15
     for sku, *_ in PRODUCTS:
         assert sum(1 for o in OFFERS if o[1] == sku) >= 2, f"{sku} needs multiple offers"

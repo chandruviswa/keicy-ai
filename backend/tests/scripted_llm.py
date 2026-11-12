@@ -1,4 +1,5 @@
-"""Deterministic rule-based stand-in for an LLM (LLM_PROVIDERS=mock). Development, demos and E2E tests only.
+"""Test-only deterministic rule-based stand-in for an LLM, injected into the gateway by tests.
+The app never loads it: LLM_PROVIDERS accepts only anthropic, openai and ollama.
 
 It answers the three agents that use a model by reading the same prompt a real model would get:
   * Intent: regexes for quantity, product, "16GB", "$15,000", "by Dec 1";

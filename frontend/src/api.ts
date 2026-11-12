@@ -24,6 +24,26 @@ export type Offer = {
   lead_time_days: number;
   valid_until: string;
   is_expired: boolean;
+  is_active: boolean;
+  specs: Record<string, unknown>;
+};
+
+export type StarterCatalog = {
+  vendors: { name: string; contact_email: string; country: string; rating: string; offers: number; imported: boolean }[];
+  products: { sku: string; name: string; category: string; description: string; offers: number; imported: boolean }[];
+};
+
+export type VendorInput = { name: string; contact_email: string; country: string; rating: string };
+export type ProductInput = { sku: string; name: string; category: string; description: string; unit: string; specs: Record<string, unknown> };
+export type OfferInput = {
+  vendor_id: string;
+  product_id: string;
+  unit_price: string;
+  currency: string;
+  available_quantity: number;
+  min_order_quantity: number;
+  lead_time_days: number;
+  valid_until: string;
   specs: Record<string, unknown>;
 };
 
@@ -167,11 +187,30 @@ export type PurchaseOrder = {
 export type WorkflowEvent = { seq: number; event_type: string; payload: Record<string, unknown>; created_at: string };
 
 export type DashboardSummary = {
+  scope: "mine" | "organisation";
   total_requests: number;
   active_workflows: number;
   pending_approvals: number;
   completed_purchases: number;
   total_transaction_value: string;
+  pipeline: { key: string; label: string; count: number }[];
+  money: {
+    paid: string;
+    paid_last_30d: string;
+    paid_prev_30d: string;
+    awaiting_approval: string;
+    ready_to_pay: string;
+    saved_vs_highest_quote: string;
+    payments: number;
+    average_order: string;
+  };
+  spend_by_day: { date: string; amount: string }[];
+  spend_by_vendor: { vendor: string; amount: string; orders: number }[];
+  spend_by_category: { category: string; amount: string }[];
+  speed: { median_minutes_to_po: number | null; median_hours_to_decision: number | null; median_hours_to_complete: number | null };
+  approvals: { approved: number; rejected: number; approval_rate: number | null };
+  agents: { runs: number; succeeded: number; success_rate: number | null; median_seconds: number | null };
+  catalogue: { vendors: number; products: number; live_offers: number; expiring_soon: number; out_of_stock: number; expired: number };
   recent_activity: (WorkflowEvent & { request_id: string; request_title: string | null })[];
   recent_purchase_orders: { id: string; po_number: string; vendor_name: string; status: string; total: string; currency: string; request_id: string }[];
 };
@@ -186,6 +225,15 @@ export const api = {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]);
     return req<Product[]>(`/products${qs.size ? `?${qs}` : ""}`);
   },
+  createVendor: (body: VendorInput) => req<Vendor>("/vendors", { method: "POST", body: JSON.stringify(body) }),
+  setVendorActive: (id: string, is_active: boolean) => req<Vendor>(`/vendors/${id}`, { method: "PATCH", body: JSON.stringify({ is_active }) }),
+  createProduct: (body: ProductInput) => req<Product>("/products", { method: "POST", body: JSON.stringify(body) }),
+  createOffer: (body: OfferInput) => req<Offer>("/offers", { method: "POST", body: JSON.stringify(body) }),
+  updateOffer: (id: string, body: Partial<{ is_active: boolean; unit_price: string; available_quantity: number; valid_until: string }>) =>
+    req<Offer>(`/offers/${id}`, { method: "PATCH", body: JSON.stringify(body) }),
+  starterCatalog: () => req<StarterCatalog>("/catalog/starter"),
+  importStarter: (body: { vendors?: string[]; skus?: string[] }) =>
+    req<{ added: { vendors: number; products: number; offers: number } }>("/catalog/starter/import", { method: "POST", body: JSON.stringify(body) }),
   listRequests: () => req<ProcurementRequest[]>("/procurement/requests"),
   getRequest: (id: string) => req<ProcurementRequest>(`/procurement/requests/${id}`),
   createRequest: (body: { raw_text: string; title?: string; budget?: string; deadline?: string }) =>
@@ -216,7 +264,6 @@ export const api = {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v) as [string, string][]);
     return req<AuditRow[]>(`/audit/logs${qs.size ? `?${qs}` : ""}`);
   },
-  mockApprove: (paypalOrderId: string) => req<unknown>("/payments/mock/approve", { method: "POST", body: JSON.stringify({ paypal_order_id: paypalOrderId }) }),
   dashboard: () => req<DashboardSummary>("/dashboard/summary"),
   paymentConfig: () => req<PaymentConfig>("/payments/config"),
   // Only the PO id is sent — the server prices the order from its own records.
@@ -225,13 +272,13 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ purchase_order_id: purchaseOrderId }),
     }),
-  capturePayPalOrder: (paypalOrderId: string, simulate?: string) =>
-    req<CaptureResult>("/payments/capture", { method: "POST", body: JSON.stringify({ paypal_order_id: paypalOrderId, ...(simulate ? { simulate } : {}) }) }),
+  capturePayPalOrder: (paypalOrderId: string) =>
+    req<CaptureResult>("/payments/capture", { method: "POST", body: JSON.stringify({ paypal_order_id: paypalOrderId }) }),
   cancelCheckout: (paypalOrderId: string) => req<CaptureResult>("/payments/cancel", { method: "POST", body: JSON.stringify({ paypal_order_id: paypalOrderId }) }),
   payments: (requestId?: string) => req<PaymentRecord[]>(`/payments${requestId ? `?request_id=${requestId}` : ""}`),
 };
 
-export type PaymentConfig = { configured: boolean; client_id: string; currency: string; mode: "sandbox" | "live" | "mock"; sdk_url: string | null; negative_testing: boolean };
+export type PaymentConfig = { configured: boolean; client_id: string; currency: string; mode: "sandbox" | "live"; sdk_url: string | null };
 export type CaptureResult = { payment_id: string; status: string; request_status: string; capture_id: string | null; message: string | null; duplicate: boolean; issues: string[] };
 export type Receipt = {
   receipt_number: string;
