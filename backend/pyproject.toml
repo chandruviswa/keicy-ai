@@ -1,0 +1,30 @@
+[project]
+name = "procura-backend"
+version = "0.1.0"
+description = "Procura AI — Autonomous Procurement Intelligence (API)"
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "sqlalchemy[asyncio]>=2.0.30",
+    "asyncpg>=0.29",
+    "pydantic-settings>=2.4",
+    "httpx>=0.27",
+    "anthropic>=0.40",
+    "alembic>=1.20.1",
+    "openai>=3.49.0",
+    "ollama>=0.6.3",
+    "websockets>=17.4",
+    "pyjwt>=2.15.1",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-asyncio>=0.23",
+]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]

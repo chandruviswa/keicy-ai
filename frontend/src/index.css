@@ -1,0 +1,92 @@
+@import "tailwindcss";
+
+/*
+ * Procura design tokens — purchasing paperwork, made digital.
+ * Ledger ink for text and chrome, ballpoint blue for actions, cool paper for the canvas,
+ * carbon-copy canary for "waiting on a person", stamp green / stamp red for decisions.
+ */
+@theme {
+  --font-sans: "Public Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  --color-ink-50: #f2f4f8;
+  --color-ink-100: #e3e7ef;
+  --color-ink-200: #c5cddc;
+  --color-ink-300: #9aa6bd;
+  --color-ink-400: #6c7a96;
+  --color-ink-500: #4b5875;
+  --color-ink-600: #36425d;
+  --color-ink-700: #27324b;
+  --color-ink-800: #1d2840;
+  --color-ink-900: #16233f;
+  --color-ink-950: #0e1830;
+
+  --color-brand-50: #eef3ff;
+  --color-brand-100: #dce6ff;
+  --color-brand-200: #b9ccff;
+  --color-brand-500: #2f5bea;
+  --color-brand-600: #2449c7;
+  --color-brand-700: #1d3aa0;
+
+  --color-canvas: #f4f6f9;
+  --color-line: #e2e6ed;
+
+  --color-canary-50: #fff8e6;
+  --color-canary-100: #fdedc0;
+  --color-canary-500: #e9a817;
+  --color-canary-700: #8a5a00;
+
+  --color-ok-50: #eaf7f0;
+  --color-ok-100: #cdebdb;
+  --color-ok-600: #1f8a5b;
+  --color-ok-700: #17694a;
+
+  --color-stamp-50: #fdeeeb;
+  --color-stamp-100: #f8d3cc;
+  --color-stamp-600: #c2412d;
+  --color-stamp-700: #9c321f;
+
+  --radius-panel: 10px;
+  --radius-control: 8px;
+  --radius-stamp: 4px;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+  body {
+    background: var(--color-canvas);
+    color: var(--color-ink-900);
+    font-family: var(--font-sans);
+    font-feature-settings: "tnum" 1, "cv11" 1; /* tabular figures: money and quantities line up */
+    -webkit-font-smoothing: antialiased;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-brand-500);
+    outline-offset: 2px;
+    border-radius: 4px;
+  }
+  ::selection {
+    background: var(--color-brand-100);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* The one piece of ambient motion: the station currently being worked on in the routing slip. */
+@keyframes station-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--color-brand-500) 45%, transparent); }
+  70% { box-shadow: 0 0 0 8px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
+}
+.station-active {
+  animation: station-pulse 1.8s ease-out infinite;
+}

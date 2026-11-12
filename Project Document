@@ -1,0 +1,1121 @@
+PHASE 1 — PROJECT FOUNDATION
+
+1.1 Project initialization
+
+Create root project directory: procura-ai
+
+Initialize Git repository.
+
+Create frontend directory.
+
+Create backend directory.
+
+Create seed directory.
+
+Create docs directory.
+
+Create tests directory.
+
+Create .gitignore.
+
+Create .env.example.
+
+Create initial README.md.
+
+Establish project naming conventions.
+
+Establish API versioning convention (/api/v1).
+
+1.2 Backend setup
+
+Create Python virtual environment.
+
+Install FastAPI.
+
+Install Uvicorn.
+
+Install SQLAlchemy.
+
+Install asyncpg.
+
+Install Alembic.
+
+Install Pydantic.
+
+Install Pydantic Settings.
+
+Install HTTPX.
+
+Install OpenAI SDK.
+
+Install Anthropic SDK.
+
+Install Ollama SDK.
+
+Install WebSocket dependencies.
+
+Create FastAPI application.
+
+Create health-check endpoint.
+
+Enable CORS for frontend.
+
+Create configuration management.
+
+Verify API documentation at /docs.
+
+Acceptance: FastAPI starts successfully and responds to health checks.
+
+1.3 Frontend setup
+
+Initialize React + Vite.
+
+Configure TypeScript.
+
+Install Tailwind CSS.
+
+Install React Router.
+
+Install Axios or Fetch API client.
+
+Install Lucide React icons.
+
+Install a chart library if required.
+
+Configure global CSS.
+
+Configure application layout.
+
+Create sidebar navigation.
+
+Create header navigation.
+
+Create responsive page structure.
+
+Connect frontend to FastAPI.
+
+Verify frontend runs successfully.
+
+Acceptance: React application loads and communicates with FastAPI.
+
+1.4 PostgreSQL
+
+Create PostgreSQL database.
+
+Configure database credentials.
+
+Connect SQLAlchemy.
+
+Create database session manager.
+
+Configure Alembic migrations.
+
+Generate initial migration.
+
+Run migrations.
+
+Verify database connection.
+
+Verify database persistence after restart.
+
+Acceptance: Application can write and retrieve persistent records.
+
+PHASE 2 — DATABASE AND BUSINESS MODELS
+
+2.1 Core tables
+
+Users.
+
+Vendors.
+
+Products.
+
+Vendor offers.
+
+Procurement requests.
+
+Purchase orders.
+
+Purchase order items.
+
+2.2 AI and workflow tables
+
+Agent runs.
+
+Agent tool logs.
+
+Workflow events.
+
+Workflow state history.
+
+Model execution metadata.
+
+2.3 Finance tables
+
+Approvals.
+
+Payments.
+
+PayPal order references.
+
+PayPal capture references.
+
+Audit logs.
+
+2.4 Database validation
+
+Configure UUID primary keys.
+
+Configure foreign keys.
+
+Configure unique constraints.
+
+Configure required field constraints.
+
+Configure monetary fields using NUMERIC.
+
+Configure currency fields.
+
+Configure JSONB fields.
+
+Add important indexes.
+
+Add created_at and updated_at fields where needed.
+
+Test database relationships.
+
+Test deletion and update constraints.
+
+Acceptance: All required entities and relationships work correctly.
+
+PHASE 3 — HYBRID AI GATEWAY
+
+3.1 Cloud AI provider
+
+Configure primary cloud LLM provider.
+
+Configure API credentials.
+
+Configure model name.
+
+Implement cloud provider adapter.
+
+Implement structured JSON output.
+
+Implement Pydantic response validation.
+
+Implement request timeout.
+
+Implement bounded retries.
+
+Record provider usage and latency.
+
+3.2 Ollama fallback
+
+Verify Ollama installation.
+
+Verify local model availability.
+
+Configure Ollama base URL.
+
+Configure local model name.
+
+Implement Ollama adapter.
+
+Implement structured response handling.
+
+Validate local model output.
+
+Test fallback when cloud provider is unavailable.
+
+Test invalid JSON responses.
+
+Test provider timeout scenarios.
+
+3.3 AI gateway
+
+Create common LLM provider interface.
+
+Create LLM gateway.
+
+Implement primary provider routing.
+
+Implement fallback routing.
+
+Implement provider error classification.
+
+Implement maximum retry limits.
+
+Log model selection per execution.
+
+Ensure financial operations never depend on model-generated success claims.
+
+Acceptance: Agents can use cloud AI and fall back to Ollama for supported reasoning tasks.
+
+PHASE 4 — CUSTOM AGENT ORCHESTRATION
+
+4.1 Agent framework
+
+Create BaseAgent interface.
+
+Create AgentContext model.
+
+Create AgentResult model.
+
+Create tool registry.
+
+Create tool execution manager.
+
+Create agent permission system.
+
+Create execution timeout handling.
+
+Create maximum tool-call limits.
+
+Create agent execution logger.
+
+Create agent error handling.
+
+Create workflow state manager.
+
+Persist execution state in PostgreSQL.
+
+Implement workflow resume mechanism.
+
+4.2 Workflow state machine
+
+CREATED.
+
+ANALYZING.
+
+RESEARCHING.
+
+EVALUATING.
+
+ORDER_DRAFTED.
+
+FINANCE_VALIDATING.
+
+AWAITING_APPROVAL.
+
+APPROVED.
+
+PAYMENT_PENDING.
+
+PAYMENT_PROCESSING.
+
+PAYMENT_COMPLETED.
+
+RECONCILING.
+
+COMPLETED.
+
+REJECTED.
+
+FAILED.
+
+PAYMENT_FAILED.
+
+CANCELLED.
+
+4.3 State transition validation
+
+Define allowed state transitions.
+
+Prevent invalid state transitions.
+
+Prevent payment before approval.
+
+Persist every transition.
+
+Support recovery after backend restart.
+
+Handle agent execution failures.
+
+Handle workflow cancellation.
+
+Acceptance: Workflow progresses through controlled states and cannot bypass financial approval.
+
+PHASE 5 — SIX SPECIALIZED AI AGENTS
+
+5.1 Intent Agent
+
+Create IntentAgent class.
+
+Create dedicated system prompt.
+
+Create procurement requirement schema.
+
+Extract product name.
+
+Extract quantity.
+
+Extract specifications.
+
+Extract budget.
+
+Extract currency.
+
+Extract delivery deadline.
+
+Detect incomplete requests.
+
+Ask clarification questions.
+
+Validate structured output.
+
+Acceptance: Natural-language instructions become validated procurement requirements.
+
+5.2 Research Agent
+
+Create ResearchAgent class.
+
+Create dedicated system prompt.
+
+Implement product catalogue search.
+
+Implement vendor search.
+
+Implement offer retrieval.
+
+Implement availability checking.
+
+Implement quotation retrieval.
+
+Return structured vendor offers.
+
+Preserve source references.
+
+Reject unsupported or fabricated offer details.
+
+Acceptance: Research agent retrieves real records from the seeded catalogue.
+
+5.3 Evaluation Agent
+
+Create EvaluationAgent class.
+
+Create dedicated system prompt.
+
+Compare unit prices.
+
+Compare total costs.
+
+Compare product specifications.
+
+Compare available quantities.
+
+Compare delivery timelines.
+
+Calculate vendor scores.
+
+Explain recommendation.
+
+Validate recommendation against business rules.
+
+Acceptance: Agent produces an explainable vendor comparison based on actual offer data.
+
+5.4 Procurement Agent
+
+Create ProcurementAgent class.
+
+Create dedicated system prompt.
+
+Validate selected vendor.
+
+Validate selected products.
+
+Validate quantity.
+
+Generate purchase order.
+
+Generate unique PO number.
+
+Calculate line totals using Python.
+
+Calculate subtotal.
+
+Calculate taxes where applicable.
+
+Calculate final total.
+
+Save purchase order.
+
+Generate purchase order summary.
+
+Acceptance: Valid purchase orders are saved in PostgreSQL.
+
+5.5 Finance Agent
+
+Create FinanceAgent class.
+
+Create dedicated system prompt.
+
+Retrieve purchase order.
+
+Validate budget.
+
+Validate currency.
+
+Validate total amount.
+
+Check purchase order status.
+
+Check approval requirements.
+
+Prepare payment request.
+
+Generate financial validation report.
+
+Block invalid purchase requests.
+
+Acceptance: Finance agent validates the purchase and prepares it for explicit user approval.
+
+5.6 Reconciliation Agent
+
+Create ReconciliationAgent class.
+
+Create dedicated system prompt.
+
+Retrieve payment record.
+
+Verify PayPal capture status.
+
+Verify captured amount.
+
+Verify currency.
+
+Update purchase order status.
+
+Generate payment receipt.
+
+Record transaction reference.
+
+Generate reconciliation report.
+
+Handle payment discrepancies.
+
+Acceptance: Only verified payment results are reconciled as completed transactions.
+
+PHASE 6 — TOOL REGISTRY
+
+6.1 Product and vendor tools
+
+search_catalog.
+
+get_product_details.
+
+search_vendors.
+
+get_vendor_quotes.
+
+check_availability.
+
+compare_offers.
+
+6.2 Procurement tools
+
+validate_requirements.
+
+calculate_purchase_total.
+
+create_purchase_order.
+
+get_purchase_order.
+
+update_purchase_order.
+
+6.3 Finance tools
+
+validate_budget.
+
+validate_currency.
+
+prepare_payment_request.
+
+check_approval_status.
+
+6.4 Payment tools
+
+prepare_paypal_order.
+
+get_paypal_order.
+
+capture_approved_payment.
+
+verify_paypal_capture.
+
+retrieve_payment_status.
+
+6.5 Tool execution safeguards
+
+Validate tool arguments.
+
+Validate tool permissions.
+
+Restrict agents to approved tools.
+
+Validate tool responses.
+
+Log all tool calls.
+
+Log tool execution duration.
+
+Handle tool failures.
+
+Prevent duplicate business operations.
+
+Separate read-only tools from write operations.
+
+Acceptance: Every agent uses authorized tools and all important actions are traceable.
+
+PHASE 7 — PROCUREMENT BUSINESS LOGIC
+
+7.1 Seed data
+
+Create at least four vendors.
+
+Create 10–15 products.
+
+Create multiple offers per product.
+
+Add different product specifications.
+
+Add different supplier prices.
+
+Add availability quantities.
+
+Add delivery timelines.
+
+Add offer expiry dates.
+
+Verify seed data.
+
+7.2 Procurement workflow
+
+Accept natural-language request.
+
+Create procurement request.
+
+Extract structured requirements.
+
+Search product catalogue.
+
+Retrieve supplier offers.
+
+Compare suitable offers.
+
+Select recommended vendor.
+
+Validate total cost.
+
+Generate purchase order.
+
+Display recommendation and reasoning.
+
+Acceptance: A complete purchase order is generated from a natural-language request.
+
+PHASE 8 — PAYPAL INTEGRATION
+
+8.1 PayPal Sandbox setup
+
+Create or access PayPal Developer account.
+
+Create Sandbox application.
+
+Retrieve Sandbox Client ID.
+
+Retrieve Sandbox Client Secret.
+
+Create Sandbox buyer account.
+
+Create Sandbox merchant account.
+
+Configure API base URL.
+
+Configure environment variables.
+
+Verify OAuth token generation.
+
+8.2 Backend payment integration
+
+Implement PayPal authentication.
+
+Implement access-token management.
+
+Implement create-order endpoint.
+
+Use PayPal Orders v2.
+
+Set payment intent to CAPTURE.
+
+Retrieve purchase order from database.
+
+Recalculate total on server.
+
+Validate approved purchase order.
+
+Create PayPal order.
+
+Persist PayPal order ID.
+
+Persist idempotency key.
+
+Implement capture endpoint.
+
+Validate approval before capture.
+
+Prevent duplicate capture.
+
+Verify capture response.
+
+Persist PayPal capture ID.
+
+Update payment status.
+
+8.3 Frontend checkout
+
+Integrate PayPal JavaScript SDK v6.
+
+Display approved purchase details.
+
+Display amount and currency.
+
+Launch PayPal checkout.
+
+Handle buyer approval.
+
+Call backend capture endpoint.
+
+Display payment success.
+
+Display payment failure.
+
+Handle checkout cancellation.
+
+8.4 Payment security
+
+Keep Client Secret on backend.
+
+Never trust frontend payment amount.
+
+Validate order ownership.
+
+Validate user approval.
+
+Validate PayPal order status.
+
+Verify captured amount.
+
+Verify currency.
+
+Implement idempotency.
+
+Handle capture timeouts safely.
+
+Implement webhook signature verification.
+
+Persist webhook event identifiers.
+
+Prevent duplicate webhook processing.
+
+Reconcile asynchronous payment updates.
+
+Acceptance: A Sandbox buyer can complete a real test checkout and the backend verifies and stores the transaction.
+
+PHASE 9 — API DEVELOPMENT
+
+9.1 Procurement APIs
+
+POST /api/v1/procurement/requests
+
+GET /api/v1/procurement/requests/{id}
+
+GET /api/v1/procurement/requests/{id}/status
+
+POST /api/v1/procurement/requests/{id}/execute
+
+GET /api/v1/procurement/requests/{id}/offers
+
+9.2 Agent APIs
+
+GET /api/v1/agents/runs/{id}
+
+GET /api/v1/agents/runs/{id}/logs
+
+9.3 Vendor APIs
+
+GET /api/v1/vendors
+
+GET /api/v1/products
+
+9.4 Purchase order APIs
+
+GET /api/v1/purchase-orders/{id}
+
+POST /api/v1/purchase-orders/{id}/approve
+
+POST /api/v1/purchase-orders/{id}/reject
+
+9.5 Payment APIs
+
+POST /api/v1/payments/create-order
+
+POST /api/v1/payments/capture
+
+GET /api/v1/payments/{id}
+
+POST /api/v1/payments/webhook
+
+9.6 Dashboard APIs
+
+GET /api/v1/dashboard/summary
+
+9.7 Real-time events
+
+Create WebSocket endpoint.
+
+Broadcast workflow.started.
+
+Broadcast agent.started.
+
+Broadcast agent.tool_called.
+
+Broadcast agent.completed.
+
+Broadcast agent.failed.
+
+Broadcast approval.required.
+
+Broadcast payment.completed.
+
+Broadcast workflow.completed.
+
+Persist events before broadcasting.
+
+Test reconnect and state recovery.
+
+Acceptance: Frontend can retrieve workflow data and receive real-time execution updates.
+
+PHASE 10 — FRONTEND AND UI
+
+10.1 Global layout
+
+Create light enterprise theme.
+
+Create sidebar.
+
+Create header.
+
+Create navigation.
+
+Create responsive layout.
+
+Create typography system.
+
+Create spacing system.
+
+Create button components.
+
+Create form components.
+
+Create table components.
+
+Create status badges.
+
+Create notification components.
+
+Create loading states.
+
+Create empty states.
+
+Create error states.
+
+10.2 Overview dashboard
+
+Total procurement requests.
+
+Active workflows.
+
+Pending approvals.
+
+Completed purchases.
+
+Total transaction value.
+
+Recent activity.
+
+Recent purchase orders.
+
+10.3 AI Workspace
+
+Natural-language input.
+
+Submit procurement request.
+
+Display extracted requirements.
+
+Display agent execution timeline.
+
+Display agent status.
+
+Display tool calls.
+
+Display agent results.
+
+Display model provider.
+
+Display execution errors.
+
+Display final recommendation.
+
+10.4 Vendor Intelligence
+
+Vendor list.
+
+Vendor details.
+
+Product offers.
+
+Price comparison.
+
+Specification comparison.
+
+Delivery comparison.
+
+Recommendation score.
+
+Recommendation explanation.
+
+10.5 Purchase orders
+
+Purchase order listing.
+
+Purchase order details.
+
+Item details.
+
+Quantity and pricing.
+
+Subtotal and tax.
+
+Final amount.
+
+Purchase order status.
+
+10.6 Approval center
+
+Pending approval list.
+
+Purchase details.
+
+AI recommendation.
+
+Budget validation.
+
+Approve action.
+
+Reject action.
+
+Rejection reason.
+
+Approval history.
+
+10.7 Payment center
+
+PayPal checkout.
+
+Payment history.
+
+Payment status.
+
+PayPal order reference.
+
+PayPal capture reference.
+
+Transaction details.
+
+Payment receipt.
+
+10.8 Intelligence and audit
+
+Agent execution history.
+
+Agent performance.
+
+Model usage information.
+
+Tool execution history.
+
+Audit trail.
+
+Workflow history.
+
+Acceptance: A judge can understand and interact with the entire product without using Swagger or database tools.
+
+PHASE 11 — SECURITY AND ERROR HANDLING
+
+Implement authentication.
+
+Protect private APIs.
+
+Validate user permissions.
+
+Validate resource ownership.
+
+Protect approval endpoints.
+
+Prevent unauthorized payment creation.
+
+Prevent unauthorized payment capture.
+
+Store secrets in environment variables.
+
+Exclude .env from Git.
+
+Validate incoming API payloads.
+
+Handle malformed AI responses.
+
+Handle LLM provider outages.
+
+Handle Ollama unavailability.
+
+Handle vendor lookup failures.
+
+Handle database connection errors.
+
+Handle PayPal API errors.
+
+Handle payment timeouts.
+
+Handle duplicate requests.
+
+Implement structured application logs.
+
+Ensure audit history is preserved.
+
+Acceptance: Unauthorized users and failed external services cannot create false successful transactions.
+
+PHASE 12 — TESTING AND QUALITY ASSURANCE
+
+12.1 Backend tests
+
+Test health endpoint.
+
+Test database connection.
+
+Test database migrations.
+
+Test every API endpoint.
+
+Test Pydantic schemas.
+
+Test agent interfaces.
+
+Test tool registry.
+
+Test workflow transitions.
+
+Test workflow recovery.
+
+12.2 Agent tests
+
+Valid procurement request.
+
+Missing product details.
+
+Invalid quantity.
+
+Budget missing.
+
+No matching product.
+
+No available vendor.
+
+Conflicting vendor offers.
+
+Evaluation output validation.
+
+Finance validation failure.
+
+Agent timeout.
+
+LLM fallback.
+
+Tool execution failure.
+
+12.3 Payment tests
+
+Successful Sandbox checkout.
+
+Buyer cancellation.
+
+Payment declined or failed scenario where supported.
+
+Invalid approval.
+
+Incorrect amount.
+
+Incorrect currency.
+
+Duplicate create-order request.
+
+Duplicate capture request.
+
+Capture timeout.
+
+Webhook verification.
+
+Duplicate webhook event.
+
+Payment reconciliation.
+
+12.4 End-to-end tests
+
+Submit procurement request.
+
+Extract requirements.
+
+Research vendors.
+
+Compare offers.
+
+Generate purchase order.
+
+Validate budget.
+
+Approve purchase.
+
+Complete PayPal checkout.
+
+Verify payment.
+
+Reconcile transaction.
+
+Generate receipt.
+
+Refresh application.
+
+Verify workflow persistence.
+
+12.5 UI testing
+
+Test desktop layout.
+
+Test smaller screen layout.
+
+Test loading states.
+
+Test empty states.
+
+Test errors.
+
+Test navigation.
+
+Test approval buttons.
+
+Test PayPal checkout.
+
+Test real-time updates.
+
+Acceptance: One complete successful procurement-to-payment journey works from start to finish.
